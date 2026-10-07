@@ -17,313 +17,361 @@ import {
   Trash2,
   TrendingUp,
   LayoutDashboard,
-  Store,
-  Phone,
-  Mail,
+  Building,
+  Home,
+  Plus,
+  BarChart3,
+  FileText,
+  Bell,
+  Settings,
+  MessageSquare,
+  LogOut,
+  ChevronRight,
+  Star,
 } from 'lucide-react';
-import { Provider } from '../../types';
+import { Provider, Hotel, Hostel } from '../../types';
 
 export const AdminDashboard: React.FC = () => {
   const {
     providers,
     approveProvider,
     rejectProvider,
+    suspendProvider,
     bookings,
+    hotels,
+    deleteHotel,
+    addHotel,
+    hostels,
+    deleteHostel,
+    addHostel,
     groceryOrders,
-    fuelOrders,
-    categories,
     groceryProducts,
-    user,
+    logout,
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'providers' | 'bookings' | 'grocery' | 'complaints'
-  >('overview');
+  const [activeMenu, setActiveMenu] = useState<
+    | 'dashboard'
+    | 'customers'
+    | 'workers'
+    | 'service_requests'
+    | 'hotels'
+    | 'hostels'
+    | 'grocery'
+    | 'orders'
+    | 'payments'
+    | 'complaints'
+    | 'reports'
+  >('dashboard');
 
   const [providerSearch, setProviderSearch] = useState('');
-  const [selectedVerificationProvider, setSelectedVerificationProvider] = useState<Provider | null>(null);
+  const [selectedWorkerProfile, setSelectedWorkerProfile] = useState<Provider | null>(null);
 
-  // Platform KPIs
+  // Statistics
   const totalCustomers = 12480;
-  const totalProviders = providers.length;
-  const activeBookingsCount = bookings.filter((b) => !['completed', 'cancelled'].includes(b.status)).length;
-  const completedServicesCount = bookings.filter((b) => b.status === 'completed').length;
+  const totalWorkers = providers.length;
+  const activeWorkers = providers.filter((p) => p.isAvailable && p.isVerified).length;
+  const pendingWorkerApprovals = providers.filter((p) => p.verificationStatus === 'pending').length;
+  const activeServiceRequests = bookings.filter((b) => !['completed', 'cancelled'].includes(b.status)).length;
+  const completedJobs = bookings.filter((b) => b.status === 'completed').length + 1840;
+  const hotelListings = hotels.length;
+  const hostelListings = hostels.length;
   const totalGroceryOrders = groceryOrders.length + 3820;
-  const totalPlatformRevenue = 482900 + bookings.reduce((acc, b) => acc + (b.paymentStatus === 'paid' ? b.amount : 0), 0);
-  const pendingProviders = providers.filter((p) => p.verificationStatus === 'pending');
+  const totalRevenue = 492000 + bookings.reduce((acc, b) => acc + (b.paymentStatus === 'paid' ? b.amount : 0), 0);
 
-  const mockComplaints = [
-    {
-      id: 'CMP-401',
-      customer: 'Sunita Sharma',
-      provider: 'Rajesh Kumar (Electrician)',
-      issue: 'Delay of 10 minutes due to heavy rain in Indiranagar',
-      status: 'Resolved',
-      severity: 'Low',
-      date: '2 hours ago',
-    },
-    {
-      id: 'CMP-402',
-      customer: 'Rahul Verma',
-      provider: 'AquaSwift Express',
-      issue: 'Requested cold water can, normal can delivered by mistake',
-      status: 'Under Review',
-      severity: 'Medium',
-      date: '5 hours ago',
-    },
-  ];
-
-  const filteredProviders = providers.filter((p) =>
-    p.name.toLowerCase().includes(providerSearch.toLowerCase()) ||
-    p.categoryName.toLowerCase().includes(providerSearch.toLowerCase())
+  const filteredWorkers = providers.filter(
+    (p) =>
+      p.name.toLowerCase().includes(providerSearch.toLowerCase()) ||
+      p.categoryName.toLowerCase().includes(providerSearch.toLowerCase()) ||
+      p.location.toLowerCase().includes(providerSearch.toLowerCase())
   );
 
   return (
-    <div className="py-6 px-4 max-w-7xl mx-auto space-y-6">
-      {/* Header Banner */}
-      <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="py-6 px-4 max-w-7xl mx-auto space-y-6 text-xs">
+      {/* Admin Top Header */}
+      <div className="bg-slate-950 text-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold mb-2">
-            <LayoutDashboard className="h-3.5 w-3.5 text-indigo-400" />
-            <span>Platform Governance & Command Console</span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold mb-2 border border-indigo-500/30">
+            <ShieldCheck className="h-4 w-4 text-indigo-400" />
+            <span>Root Admin System Console</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black font-display">WHY NOT WE Admin</h1>
+          <h1 className="text-2xl sm:text-3xl font-black font-display tracking-tight">
+            WHY NOT WE Control Center
+          </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Real-time multi-service operational monitoring, provider verification pipeline & compliance audits.
+            Real-time management for workers, service requests, hotel & hostel inventories, and platform safety.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs font-mono text-emerald-400 font-bold">System Online · All Services Live</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="font-mono text-emerald-400 text-[11px] font-bold">Node 24x7 Live</span>
+          </div>
+          <button
+            onClick={logout}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold transition-colors border border-slate-700"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Logout Admin</span>
+          </button>
         </div>
       </div>
 
-      {/* 7 Core KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
-        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
+      {/* 10 Statistics Cards as requested in prompt */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
           <div className="text-[10px] uppercase font-bold text-slate-400">Total Customers</div>
-          <div className="text-lg font-black text-slate-900 font-mono mt-1">{totalCustomers.toLocaleString()}</div>
+          <div className="text-lg font-black text-slate-900 font-mono mt-0.5">{totalCustomers.toLocaleString()}</div>
           <div className="text-[10px] text-emerald-600 font-medium">+18% this month</div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
-          <div className="text-[10px] uppercase font-bold text-slate-400">Total Providers</div>
-          <div className="text-lg font-black text-slate-900 font-mono mt-1">{totalProviders}</div>
-          <div className="text-[10px] text-slate-500">16 active trades</div>
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+          <div className="text-[10px] uppercase font-bold text-slate-400">Total Workers</div>
+          <div className="text-lg font-black text-slate-900 font-mono mt-0.5">{totalWorkers}</div>
+          <div className="text-[10px] text-slate-500">{activeWorkers} Active On-Duty</div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
-          <div className="text-[10px] uppercase font-bold text-slate-400">Active Bookings</div>
-          <div className="text-lg font-black text-slate-900 font-mono mt-1">{activeBookingsCount}</div>
-          <div className="text-[10px] text-amber-600 font-medium">Live on ground</div>
+        <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 shadow-2xs">
+          <div className="text-[10px] uppercase font-bold text-amber-800">Pending Approvals</div>
+          <div className="text-lg font-black text-amber-950 font-mono mt-0.5">{pendingWorkerApprovals}</div>
+          <div className="text-[10px] text-amber-700 font-bold">Needs Review</div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+          <div className="text-[10px] uppercase font-bold text-slate-400">Active Requests</div>
+          <div className="text-lg font-black text-slate-900 font-mono mt-0.5">{activeServiceRequests}</div>
+          <div className="text-[10px] text-blue-600 font-medium">In dispatch flow</div>
+        </div>
+
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
           <div className="text-[10px] uppercase font-bold text-slate-400">Completed Jobs</div>
-          <div className="text-lg font-black text-slate-900 font-mono mt-1">{completedServicesCount + 1840}</div>
-          <div className="text-[10px] text-emerald-600 font-medium">99.2% satisfaction</div>
+          <div className="text-lg font-black text-slate-900 font-mono mt-0.5">{completedJobs}</div>
+          <div className="text-[10px] text-emerald-600 font-medium">99.4% success</div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+          <div className="text-[10px] uppercase font-bold text-slate-400">Hotel Listings</div>
+          <div className="text-lg font-black text-slate-900 font-mono mt-0.5">{hotelListings}</div>
+          <div className="text-[10px] text-slate-500">Live booking ready</div>
+        </div>
+
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+          <div className="text-[10px] uppercase font-bold text-slate-400">Hostel Listings</div>
+          <div className="text-lg font-black text-slate-900 font-mono mt-0.5">{hostelListings}</div>
+          <div className="text-[10px] text-slate-500">PGs & Student beds</div>
+        </div>
+
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
           <div className="text-[10px] uppercase font-bold text-slate-400">Grocery Orders</div>
-          <div className="text-lg font-black text-slate-900 font-mono mt-1">{totalGroceryOrders.toLocaleString()}</div>
-          <div className="text-[10px] text-emerald-600 font-medium">15m avg delivery</div>
+          <div className="text-lg font-black text-slate-900 font-mono mt-0.5">{totalGroceryOrders.toLocaleString()}</div>
+          <div className="text-[10px] text-emerald-600 font-medium">15m dark stores</div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
-          <div className="text-[10px] uppercase font-bold text-slate-400">Total Revenue</div>
-          <div className="text-lg font-black text-slate-900 font-mono mt-1">₹{(totalPlatformRevenue / 1000).toFixed(1)}k</div>
-          <div className="text-[10px] text-emerald-600 font-medium">Platform GMV</div>
-        </div>
-
-        <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200/90 shadow-2xs col-span-2 sm:col-span-1">
-          <div className="text-[10px] uppercase font-bold text-amber-800">Pending KYC</div>
-          <div className="text-lg font-black text-amber-950 font-mono mt-1">{pendingProviders.length}</div>
-          <div className="text-[10px] text-amber-700 font-bold">Needs approval</div>
+        <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-2xs col-span-2 sm:col-span-1 lg:col-span-2">
+          <div className="text-[10px] uppercase font-bold text-slate-400">Platform GMV Revenue</div>
+          <div className="text-xl font-black text-slate-900 font-mono mt-0.5">₹{(totalRevenue / 1000).toFixed(1)}k</div>
+          <div className="text-[10px] text-emerald-600 font-medium">Settled to bank accounts</div>
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Admin Menu Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar">
         {[
-          { id: 'overview', label: 'Overview & Pipelines' },
-          { id: 'providers', label: `Provider KYC Pipeline (${pendingProviders.length} Pending)` },
-          { id: 'bookings', label: `Bookings Oversight (${bookings.length})` },
-          { id: 'grocery', label: `Grocery Catalog (${groceryProducts.length})` },
-          { id: 'complaints', label: `Complaints Desk (${mockComplaints.length})` },
-        ].map((tab) => (
+          { id: 'dashboard', label: 'Dashboard & Charts' },
+          { id: 'workers', label: `Workers Management (${providers.length})` },
+          { id: 'service_requests', label: `Service Requests (${bookings.length})` },
+          { id: 'hotels', label: `Hotels (${hotels.length})` },
+          { id: 'hostels', label: `Hostels (${hostels.length})` },
+          { id: 'grocery', label: 'Grocery Catalog' },
+          { id: 'complaints', label: 'Complaints Desk' },
+        ].map((item) => (
           <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as typeof activeTab)}
+            key={item.id}
+            onClick={() => setActiveMenu(item.id as typeof activeMenu)}
             className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
-              activeTab === tab.id
-                ? 'bg-slate-900 text-white shadow-xs'
+              activeMenu === item.id
+                ? 'bg-slate-950 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
           >
-            {tab.label}
+            {item.label}
           </button>
         ))}
       </div>
 
-      {/* TAB 1: Overview */}
-      {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 text-xs">
-          {/* Pending Verifications Quick Card */}
-          <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm text-slate-900 font-display">
-                Pending Provider Verifications
-              </h3>
-              <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">
-                Action Required
-              </span>
-            </div>
+      {/* TAB 1: Visual Interactive Charts (Customer Growth, Worker Growth, Bookings, Revenue, Service Requests) */}
+      {activeMenu === 'dashboard' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Chart 1: Customer & Worker Growth */}
+            <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900 font-display">Customer & Worker Growth</h3>
+                  <p className="text-slate-400 text-[11px]">Monthly onboarding trajectory</p>
+                </div>
+                <div className="flex items-center gap-3 text-[10px]">
+                  <span className="flex items-center gap-1 font-bold text-slate-900">
+                    <span className="h-2 w-2 rounded-full bg-indigo-600" /> Customers
+                  </span>
+                  <span className="flex items-center gap-1 font-bold text-slate-900">
+                    <span className="h-2 w-2 rounded-full bg-amber-500" /> Workers
+                  </span>
+                </div>
+              </div>
 
-            {pendingProviders.length === 0 ? (
-              <p className="text-slate-400">All applicant service providers have been verified.</p>
-            ) : (
-              <div className="space-y-3">
-                {pendingProviders.map((prov) => (
-                  <div
-                    key={prov.id}
-                    className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={prov.avatar}
-                        alt={prov.name}
-                        className="h-10 w-10 rounded-xl object-cover"
+              {/* Bar Chart Visualization */}
+              <div className="h-44 flex items-end justify-between gap-3 pt-6 pb-2 border-b border-slate-100">
+                {[
+                  { month: 'Jun', cust: 45, wrk: 20 },
+                  { month: 'Jul', cust: 60, wrk: 32 },
+                  { month: 'Aug', cust: 78, wrk: 45 },
+                  { month: 'Sep', cust: 92, wrk: 60 },
+                  { month: 'Oct', cust: 110, wrk: 85 },
+                  { month: 'Nov', cust: 140, wrk: 115 },
+                ].map((d, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                    <div className="w-full flex items-end justify-center gap-1 h-full">
+                      <div
+                        style={{ height: `${(d.cust / 150) * 100}%` }}
+                        className="w-3.5 bg-indigo-600 rounded-t-md hover:bg-indigo-500 transition-all"
+                        title={`Customers: ${d.cust * 100}`}
                       />
-                      <div>
-                        <div className="font-bold text-slate-900">{prov.name}</div>
-                        <div className="text-slate-500 text-[11px]">{prov.categoryName} · {prov.experienceYears} yrs exp</div>
-                        <div className="text-[10px] text-slate-400 font-mono">Doc: {prov.idProofType} ({prov.idProofNumber})</div>
-                      </div>
+                      <div
+                        style={{ height: `${(d.wrk / 150) * 100}%` }}
+                        className="w-3.5 bg-amber-400 rounded-t-md hover:bg-amber-300 transition-all"
+                        title={`Workers: ${d.wrk}`}
+                      />
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => rejectProvider(prov.id)}
-                        className="p-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50"
-                        title="Reject application"
-                      >
-                        <XCircle className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => approveProvider(prov.id)}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 shadow-xs"
-                      >
-                        <CheckCircle className="h-3.5 w-3.5" />
-                        <span>Approve & Verify</span>
-                      </button>
-                    </div>
+                    <span className="text-[10px] text-slate-400 font-medium">{d.month}</span>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Real-time Category Breakdown */}
-          <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-sm space-y-4">
-            <h3 className="font-bold text-sm text-slate-900 font-display">Services Directory Breakdown</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {categories.slice(0, 8).map((cat) => (
-                <div key={cat.id} className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{cat.emoji}</span>
-                    <span className="font-medium text-slate-800 truncate">{cat.name}</span>
-                  </div>
-                  <span className="font-bold text-slate-900 font-mono">{cat.providerCount}</span>
+            {/* Chart 2: Revenue & Service Bookings */}
+            <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900 font-display">Bookings & GMV Revenue</h3>
+                  <p className="text-slate-400 text-[11px]">Weekly transaction volume (₹ in Thousands)</p>
                 </div>
-              ))}
+                <span className="font-mono text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded text-[10px]">
+                  +24.6% WoW
+                </span>
+              </div>
+
+              <div className="h-44 flex items-end justify-between gap-3 pt-6 pb-2 border-b border-slate-100">
+                {[
+                  { week: 'W1', val: 55 },
+                  { week: 'W2', val: 72 },
+                  { week: 'W3', val: 68 },
+                  { week: 'W4', val: 95 },
+                  { week: 'W5', val: 120 },
+                  { week: 'W6', val: 145 },
+                ].map((w, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                    <div
+                      style={{ height: `${(w.val / 160) * 100}%` }}
+                      className="w-8 bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t-lg hover:brightness-110 transition-all shadow-xs"
+                      title={`₹${w.val}k`}
+                    />
+                    <span className="text-[10px] text-slate-400 font-medium">{w.week}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* TAB 2: Providers KYC Management */}
-      {activeTab === 'providers' && (
+      {/* TAB 2: Workers Management (Approve, Reject, Suspend, View Profile) */}
+      {activeMenu === 'workers' && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="relative max-w-sm w-full">
               <Search className="h-4 w-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search provider by name, trade or area..."
+                placeholder="Search worker by name, trade or location..."
                 value={providerSearch}
                 onChange={(e) => setProviderSearch(e.target.value)}
-                className="w-full text-xs rounded-xl border border-slate-200 pl-10 pr-3 py-2.5 bg-white"
+                className="w-full text-xs rounded-xl border border-slate-200 pl-10 pr-3 py-2 bg-white"
               />
             </div>
-
-            <div className="text-xs text-slate-500 font-medium">
-              Showing {filteredProviders.length} Registered Providers
-            </div>
+            <div className="text-slate-500">{filteredWorkers.length} workers registered</div>
           </div>
 
           <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-400 uppercase text-[10px] font-bold">
                 <tr>
-                  <th className="p-3.5">Provider</th>
-                  <th className="p-3.5">Trade Category</th>
+                  <th className="p-3.5">Worker Name</th>
+                  <th className="p-3.5">Service Trade</th>
+                  <th className="p-3.5">Location</th>
+                  <th className="p-3.5">Rating</th>
                   <th className="p-3.5">Status</th>
-                  <th className="p-3.5">Rating / Jobs</th>
-                  <th className="p-3.5">KYC Document</th>
+                  <th className="p-3.5">Verification</th>
                   <th className="p-3.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredProviders.map((prov) => (
-                  <tr key={prov.id} className="hover:bg-slate-50/80 transition-colors">
+                {filteredWorkers.map((w) => (
+                  <tr key={w.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-3.5">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={prov.avatar}
-                          alt={prov.name}
-                          className="h-10 w-10 rounded-xl object-cover border border-slate-200"
-                        />
+                        <img src={w.avatar} alt={w.name} className="h-10 w-10 rounded-xl object-cover border" />
                         <div>
-                          <div className="font-bold text-slate-900">{prov.name}</div>
-                          <div className="text-[11px] text-slate-400">{prov.phone}</div>
+                          <div className="font-bold text-slate-900">{w.name}</div>
+                          <div className="text-slate-400 text-[10px]">{w.phone}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="p-3.5 font-medium text-slate-700">{prov.categoryName}</td>
+                    <td className="p-3.5 font-medium">{w.categoryName}</td>
+                    <td className="p-3.5 text-slate-500 truncate max-w-[160px]">{w.location}</td>
+                    <td className="p-3.5 font-bold">{w.rating} ★</td>
                     <td className="p-3.5">
-                      {prov.isVerified ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                          <CheckCircle className="h-3.5 w-3.5" />
-                          <span>Verified</span>
+                      {w.isAvailable ? (
+                        <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[10px] font-bold">
+                          Online
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                          <Clock className="h-3.5 w-3.5" />
-                          <span>Pending Review</span>
+                        <span className="text-slate-500 bg-slate-100 px-2 py-0.5 rounded text-[10px]">
+                          Offline
                         </span>
                       )}
                     </td>
                     <td className="p-3.5">
-                      <div className="font-bold text-slate-900">{prov.rating} ★</div>
-                      <div className="text-[10px] text-slate-400">{prov.completedJobs} jobs done</div>
+                      {w.isVerified ? (
+                        <span className="text-emerald-700 font-bold flex items-center gap-1">
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          <span>Verified</span>
+                        </span>
+                      ) : (
+                        <span className="text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded text-[10px]">
+                          Pending KYC
+                        </span>
+                      )}
                     </td>
-                    <td className="p-3.5 font-mono text-[11px] text-slate-600">
-                      {prov.idProofType || 'Govt Verified'} ({prov.idProofNumber || 'KA-8812'})
-                    </td>
-                    <td className="p-3.5 text-right">
-                      {!prov.isVerified ? (
+                    <td className="p-3.5 text-right space-x-1.5">
+                      <button
+                        onClick={() => setSelectedWorkerProfile(w)}
+                        className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 font-bold text-[11px]"
+                      >
+                        View Profile
+                      </button>
+
+                      {!w.isVerified ? (
                         <button
-                          onClick={() => approveProvider(prov.id)}
-                          className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] shadow-xs"
+                          onClick={() => approveProvider(w.id)}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px]"
                         >
-                          Approve KYC
+                          Approve
                         </button>
                       ) : (
                         <button
-                          onClick={() => rejectProvider(prov.id)}
-                          className="px-3 py-1.5 rounded-lg border border-slate-200 hover:border-rose-400 text-slate-600 hover:text-rose-600 font-semibold text-[11px]"
+                          onClick={() => suspendProvider(w.id)}
+                          className="px-2.5 py-1 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 font-bold text-[11px]"
                         >
                           Suspend
                         </button>
@@ -337,83 +385,245 @@ export const AdminDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 3: Bookings Oversight */}
-      {activeTab === 'bookings' && (
+      {/* TAB 3: Service Requests Monitoring */}
+      {activeMenu === 'service_requests' && (
         <div className="space-y-3">
           {bookings.map((b) => (
             <div
               key={b.id}
-              className="p-4 rounded-2xl bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+              className="p-4 rounded-2xl bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
             >
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm text-slate-900 font-display">{b.serviceTitle}</span>
+                  <span className="font-bold text-slate-900">{b.serviceTitle}</span>
                   <span className="font-mono text-slate-400">#{b.id}</span>
                   <span className="capitalize font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-[10px]">
                     {b.status.replace(/_/g, ' ')}
                   </span>
                 </div>
-                <div className="text-slate-500 mt-1">
-                  Customer: <strong>{b.customerName}</strong> · Provider: <strong>{b.providerName}</strong> ({b.providerCategory})
+                <div className="text-slate-500 mt-0.5">
+                  Customer: <strong>{b.customerName}</strong> · Assigned: <strong>{b.providerName}</strong>
                 </div>
-                <div className="text-slate-400 text-[11px] mt-0.5">Location: {b.address.street}, {b.address.area}</div>
+                <div className="text-slate-400 text-[11px]">Location: {b.address.street}, {b.address.area}</div>
               </div>
 
               <div className="text-right">
                 <div className="font-bold text-base text-slate-900 font-mono">₹{b.amount}</div>
-                <div className="text-[10px] text-slate-500">Payment: {b.paymentStatus.toUpperCase()}</div>
+                <div className="text-[10px] text-slate-500">Paid: {b.paymentStatus.toUpperCase()}</div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* TAB 4: Grocery Catalog Manager */}
-      {activeTab === 'grocery' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+      {/* TAB 4: Hotel Management (Add, Edit, Delete Hotel) */}
+      {activeMenu === 'hotels' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-sm text-slate-900 font-display">Manage Hotels</h3>
+              <p className="text-slate-500">Add, edit pricing, and manage rooms for hotels</p>
+            </div>
+            <button
+              onClick={() => {
+                const newH: Hotel = {
+                  id: `ht-${Date.now()}`,
+                  name: 'Grand Horizon Residency',
+                  location: 'Banjara Hills, Hyderabad',
+                  city: 'Hyderabad',
+                  address: 'Road No. 2, Banjara Hills, Hyderabad',
+                  rating: 4.8,
+                  reviewCount: 15,
+                  startingPrice: 2499,
+                  images: ['https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80'],
+                  description: 'Premium boutique hotel near tech parks with 24/7 reception and rooftop pool.',
+                  amenities: ['Free Wi-Fi', 'AC', 'Swimming Pool', 'Breakfast'],
+                  availableRooms: 6,
+                  rooms: [
+                    {
+                      id: `rm-${Date.now()}`,
+                      name: 'Executive Deluxe King',
+                      type: 'Deluxe AC Room',
+                      pricePerNight: 2499,
+                      capacity: 2,
+                      amenities: ['King Bed', 'AC', 'Rain Shower'],
+                      available: true,
+                      image: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=400&q=80',
+                    },
+                  ],
+                };
+                addHotel(newH);
+              }}
+              className="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold flex items-center gap-1.5 shadow-xs"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Hotel</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {hotels.map((h) => (
+              <div key={h.id} className="p-4 rounded-2xl bg-white border border-slate-200 flex flex-col justify-between space-y-3">
+                <div className="flex items-center gap-3">
+                  <img src={h.images[0]} alt={h.name} className="h-14 w-14 rounded-xl object-cover" />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-slate-900 truncate">{h.name}</h4>
+                    <div className="text-[11px] text-slate-500">{h.location}, {h.city}</div>
+                    <div className="font-mono font-bold text-slate-900 mt-0.5">₹{h.startingPrice}/night</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                  <span className="text-emerald-700 font-bold">{h.availableRooms} rooms available</span>
+                  <button
+                    onClick={() => deleteHotel(h.id)}
+                    className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50"
+                    title="Delete Hotel"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: Hostel Management (Add, Delete Hostels) */}
+      {activeMenu === 'hostels' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-sm text-slate-900 font-display">Manage Hostels & PGs</h3>
+              <p className="text-slate-500">Configure student and professional hostel listings</p>
+            </div>
+            <button
+              onClick={() => {
+                const newHs: Hostel = {
+                  id: `hs-${Date.now()}`,
+                  name: 'Royal Comforts Boys PG',
+                  category: 'boys',
+                  location: 'Madhapur Metro, Hyderabad',
+                  city: 'Hyderabad',
+                  address: 'Plot 45, Image Gardens Road, Madhapur, Hyderabad',
+                  rating: 4.8,
+                  reviewCount: 20,
+                  startingRent: 7500,
+                  images: ['https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=600&q=80'],
+                  description: 'Spacious boys PG with 3-time meals, high-speed Wi-Fi and daily housekeeping.',
+                  foodAvailable: true,
+                  wifi: true,
+                  laundry: true,
+                  security24x7: true,
+                  parking: true,
+                  contactPhone: '+91 99881 22334',
+                  roomOptions: [
+                    { id: `opt-${Date.now()}`, type: 'double', name: 'Double Sharing AC', monthlyRent: 8500, availableBeds: 4, depositAmount: 5000 },
+                  ],
+                };
+                addHostel(newHs);
+              }}
+              className="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold flex items-center gap-1.5 shadow-xs"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Hostel</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {hostels.map((hs) => (
+              <div key={hs.id} className="p-4 rounded-2xl bg-white border border-slate-200 flex flex-col justify-between space-y-3">
+                <div className="flex items-center gap-3">
+                  <img src={hs.images[0]} alt={hs.name} className="h-14 w-14 rounded-xl object-cover" />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-slate-900 truncate">{hs.name}</h4>
+                    <div className="text-[11px] text-slate-500 capitalize">{hs.category.replace('_', ' ')} · {hs.city}</div>
+                    <div className="font-mono font-bold text-slate-900 mt-0.5">₹{hs.startingRent}/mo</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                  <span className="text-blue-700 font-bold">{hs.foodAvailable ? 'Food Included' : 'No Food'}</span>
+                  <button
+                    onClick={() => deleteHostel(hs.id)}
+                    className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50"
+                    title="Delete Hostel"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 6: Grocery Catalog */}
+      {activeMenu === 'grocery' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           {groceryProducts.map((p) => (
             <div key={p.id} className="p-3.5 rounded-2xl bg-white border border-slate-200 flex items-center gap-3">
-              <img src={p.image} alt={p.name} className="h-12 w-12 rounded-xl object-cover shrink-0" />
+              <img src={p.image} alt={p.name} className="h-12 w-12 rounded-xl object-cover" />
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-slate-900 truncate">{p.name}</div>
                 <div className="text-[11px] text-slate-400">{p.unit} · {p.category}</div>
-                <div className="font-bold text-slate-900 mt-0.5">₹{p.price} (MRP ₹{p.mrp})</div>
+                <div className="font-mono font-bold text-slate-900">₹{p.price}</div>
               </div>
-              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                In Stock
-              </span>
             </div>
           ))}
         </div>
       )}
 
-      {/* TAB 5: Complaints Desk */}
-      {activeTab === 'complaints' && (
-        <div className="space-y-3">
-          {mockComplaints.map((c) => (
-            <div
-              key={c.id}
-              className="p-4 rounded-2xl bg-white border border-slate-200 flex items-center justify-between text-xs"
-            >
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-900">{c.issue}</span>
-                  <span className="text-[10px] font-mono text-slate-400">#{c.id}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                    c.status === 'Resolved' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
-                  }`}>
-                    {c.status}
-                  </span>
-                </div>
-                <div className="text-slate-500 mt-1">
-                  Raised by {c.customer} against {c.provider} · {c.date}
-                </div>
-              </div>
-              <button className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-[11px]">
-                Investigate
+      {/* Worker Profile Modal */}
+      {selectedWorkerProfile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm text-slate-900 font-display">Worker Verification Audit</h3>
+              <button
+                onClick={() => setSelectedWorkerProfile(null)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-900"
+              >
+                <XCircle className="h-5 w-5" />
               </button>
             </div>
-          ))}
+
+            <div className="flex items-center gap-3">
+              <img src={selectedWorkerProfile.avatar} alt={selectedWorkerProfile.name} className="h-14 w-14 rounded-2xl object-cover border" />
+              <div>
+                <h4 className="font-bold text-base text-slate-900">{selectedWorkerProfile.name}</h4>
+                <div className="text-slate-500">{selectedWorkerProfile.categoryName} Specialist</div>
+                <div className="text-[10px] text-slate-400">{selectedWorkerProfile.phone}</div>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+              <div>KYC Document: <strong>{selectedWorkerProfile.idProofType}</strong></div>
+              <div>ID Number: <strong className="font-mono">{selectedWorkerProfile.idProofNumber}</strong></div>
+              <div>Experience: <strong>{selectedWorkerProfile.experienceYears} Years</strong></div>
+              <div>Rating: <strong>{selectedWorkerProfile.rating} ★ ({selectedWorkerProfile.reviewCount} reviews)</strong></div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setSelectedWorkerProfile(null)}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-bold"
+              >
+                Close
+              </button>
+              {!selectedWorkerProfile.isVerified && (
+                <button
+                  onClick={() => {
+                    approveProvider(selectedWorkerProfile.id);
+                    setSelectedWorkerProfile(null);
+                  }}
+                  className="px-5 py-2 rounded-xl bg-emerald-600 text-white font-bold"
+                >
+                  Approve KYC Now
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

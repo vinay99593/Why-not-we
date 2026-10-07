@@ -108,6 +108,7 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
       requested: 1,
       accepted: 2,
       on_the_way: 3,
+      arrived: 3.5,
       in_progress: 4,
       completed: 5,
       cancelled: 0,

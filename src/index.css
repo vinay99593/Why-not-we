@@ -1,13 +1,45 @@
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    --primary: #2563EB;
+    --primary-hover: #1D4ED8;
+    --secondary: #14B8A6;
+    --secondary-hover: #0D9488;
+    --accent: #F59E0B;
+    --accent-hover: #D97706;
+    --success: #16A34A;
+    --error: #DC2626;
+    --warning: #F59E0B;
+    --background: #F8FAFC;
+    --card: #FFFFFF;
+    --text-primary: #0F172A;
+    --text-secondary: #64748B;
+    --border: #E2E8F0;
+    --muted: #F1F5F9;
+  }
+
   body {
+    background-color: var(--background);
+    color: var(--text-primary);
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   }
   h1, h2, h3, .font-display {
     font-family: 'Space Grotesk', 'Plus Jakarta Sans', system-ui, sans-serif;
   }
 }
+
+/* Global brand helper utility classes */
+.bg-brand-primary { background-color: #2563EB; }
+.bg-brand-primary:hover { background-color: #1D4ED8; }
+.text-brand-primary { color: #2563EB; }
+.border-brand-primary { border-color: #2563EB; }
+
+.bg-brand-secondary { background-color: #14B8A6; }
+.text-brand-secondary { color: #14B8A6; }
+
+.bg-brand-accent { background-color: #F59E0B; }
+.text-brand-accent { color: #F59E0B; }
 
 /* Custom scrollbar for horizontal categories and drawers */
 ::-webkit-scrollbar {
@@ -33,3 +65,4 @@
 .animate-pulse-glow {
   animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+

@@ -16,6 +16,13 @@ import { CartDrawer } from './components/grocery/CartDrawer';
 import { ProviderRegistrationModal } from './components/provider/ProviderRegistrationModal';
 import { HelpSupportModal } from './components/static/HelpSupportModal';
 import { LegalModal } from './components/static/LegalModal';
+import { VoiceSearchModal } from './components/common/VoiceSearchModal';
+
+// Auth & Onboarding Screens
+import { WelcomeLandingScreen } from './components/auth/WelcomeLandingScreen';
+import { CustomerLoginPage } from './components/auth/CustomerLoginPage';
+import { WorkerLoginPage } from './components/auth/WorkerLoginPage';
+import { AdminLoginPage } from './components/auth/AdminLoginPage';
 
 // Pages
 import { HomePage } from './components/home/HomePage';
@@ -23,13 +30,37 @@ import { ServicesPage } from './components/customer/ServicesPage';
 import { GrocerySection } from './components/grocery/GrocerySection';
 import { FuelDeliverySection } from './components/fuel/FuelDeliverySection';
 import { EmergencyServicesSection } from './components/emergency/EmergencyServicesSection';
+import { HotelsSection } from './components/hotels/HotelsSection';
+import { HostelsSection } from './components/hostels/HostelsSection';
 import { OrdersPage } from './components/customer/OrdersPage';
 import { CustomerDashboard } from './components/customer/CustomerDashboard';
 import { ProviderDashboard } from './components/provider/ProviderDashboard';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 
 const MainLayout: React.FC = () => {
-  const { activePage } = useApp();
+  const {
+    activePage,
+    authScreen,
+    isVoiceSearchOpen,
+    setIsVoiceSearchOpen,
+    setSearchQuery,
+    addRecentSearch,
+    setActivePage,
+  } = useApp();
+
+  // Distinct multi-role authentication screens
+  if (authScreen === 'welcome') {
+    return <WelcomeLandingScreen />;
+  }
+  if (authScreen === 'customer_login' || authScreen === 'customer_register') {
+    return <CustomerLoginPage />;
+  }
+  if (authScreen === 'worker_login' || authScreen === 'worker_register') {
+    return <WorkerLoginPage />;
+  }
+  if (authScreen === 'admin_login') {
+    return <AdminLoginPage />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
@@ -43,9 +74,11 @@ const MainLayout: React.FC = () => {
         {activePage === 'grocery' && <GrocerySection />}
         {activePage === 'fuel' && <FuelDeliverySection />}
         {activePage === 'emergency' && <EmergencyServicesSection />}
+        {activePage === 'hotels' && <HotelsSection />}
+        {activePage === 'hostels' && <HostelsSection />}
         {activePage === 'orders' && <OrdersPage />}
         {activePage === 'customer_dashboard' && <CustomerDashboard />}
-        {activePage === 'provider_dashboard' && <ProviderDashboard />}
+        {(activePage === 'provider_dashboard' || activePage === 'worker_dashboard') && <ProviderDashboard />}
         {activePage === 'admin_dashboard' && <AdminDashboard />}
       </main>
 
@@ -64,6 +97,15 @@ const MainLayout: React.FC = () => {
       <ProviderRegistrationModal />
       <HelpSupportModal />
       <LegalModal />
+      <VoiceSearchModal
+        isOpen={isVoiceSearchOpen}
+        onClose={() => setIsVoiceSearchOpen(false)}
+        onTranscript={(text) => {
+          setSearchQuery(text);
+          addRecentSearch(text);
+          setActivePage('services');
+        }}
+      />
     </div>
   );
 };

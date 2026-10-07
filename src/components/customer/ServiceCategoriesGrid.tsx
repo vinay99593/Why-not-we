@@ -13,8 +13,8 @@ interface ServiceCategoriesGridProps {
 export const ServiceCategoriesGrid: React.FC<ServiceCategoriesGridProps> = ({
   onSelectCategory,
   limit,
-  title = 'Browse All Local Services',
-  subtitle = 'Verified technicians and doorstep professionals available in your neighborhood',
+  title = 'Visual Service Catalog',
+  subtitle = 'Tap any service to connect with verified nearby professionals',
 }) => {
   const { categories, setSelectedCategoryId, setActivePage } = useApp();
 
@@ -30,6 +30,10 @@ export const ServiceCategoriesGrid: React.FC<ServiceCategoriesGridProps> = ({
       setActivePage('grocery');
     } else if (cat.id === 'fuel_delivery') {
       setActivePage('fuel');
+    } else if (cat.id === 'hotels') {
+      setActivePage('hotels');
+    } else if (cat.id === 'hostels') {
+      setActivePage('hostels');
     } else {
       setSelectedCategoryId(cat.id);
       setActivePage('services');
@@ -40,64 +44,78 @@ export const ServiceCategoriesGrid: React.FC<ServiceCategoriesGridProps> = ({
     <section className="py-8 px-4 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-2">
         <div>
-          <div className="text-xs font-bold uppercase tracking-wider text-amber-600 mb-1 flex items-center gap-1.5">
+          <div className="text-xs font-bold uppercase tracking-wider text-blue-600 mb-1 flex items-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5" />
-            <span>On-Demand Trades & Deliveries</span>
+            <span>Image-First Services</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 font-display tracking-tight">
             {title}
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">{subtitle}</p>
+          <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
         </div>
 
         {limit && (
           <button
             onClick={() => setActivePage('services')}
-            className="text-xs font-bold text-slate-900 hover:text-amber-600 flex items-center gap-1 transition-colors group shrink-0"
+            className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors group shrink-0 cursor-pointer"
           >
-            <span>View all 16 categories</span>
+            <span>View all 16 services</span>
             <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
           </button>
         )}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* Visual Service Cards Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-5">
         {displayedCategories.map((cat) => (
           <div
             key={cat.id}
             onClick={() => handleClick(cat)}
-            className="group relative p-4 rounded-2xl bg-white border border-slate-200/90 hover:border-slate-900 hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between"
+            className="group bg-white rounded-2xl sm:rounded-3xl border border-slate-200 hover:border-blue-600 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.025] active:scale-[0.98] cursor-pointer flex flex-col justify-between will-change-transform"
           >
-            <div>
-              {/* Category Icon & Emergency Tag */}
-              <div className="flex items-start justify-between mb-3">
-                <div className="h-12 w-12 rounded-xl bg-slate-100 group-hover:bg-slate-900 flex items-center justify-center text-2xl transition-colors">
-                  <span>{cat.emoji}</span>
-                </div>
+            {/* Large Visual Photo */}
+            <div className="relative h-36 sm:h-44 w-full overflow-hidden bg-slate-100">
+              <img
+                src={
+                  cat.image ||
+                  'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80'
+                }
+                alt={cat.name}
+                className="w-full h-full object-cover group-hover:scale-112 transition-transform duration-500 ease-out"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent opacity-85 group-hover:opacity-75 transition-opacity duration-300" />
 
-                <div className="text-right">
-                  {cat.emergencyAvailable && (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-rose-600">
-                      <AlertTriangle className="h-3 w-3" />
-                      <span>24x7</span>
-                    </span>
-                  )}
-                </div>
+              {/* Emoji Badge with subtle hover bounce */}
+              <div className="absolute top-2.5 left-2.5 h-9 w-9 rounded-xl bg-white/95 backdrop-blur-md flex items-center justify-center text-lg shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 ease-out">
+                <span>{cat.emoji}</span>
               </div>
 
-              {/* Title & Description */}
-              <h3 className="font-bold text-slate-900 text-sm group-hover:text-amber-600 transition-colors font-display line-clamp-1">
-                {cat.name}
-              </h3>
-              <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                {cat.description}
-              </p>
+              {/* Emergency / 24x7 Badge */}
+              {cat.emergencyAvailable && (
+                <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-lg bg-rose-600 text-white text-[10px] font-bold flex items-center gap-1 shadow-xs group-hover:shadow-md transition-shadow">
+                  <AlertTriangle className="h-3 w-3" />
+                  <span>24x7</span>
+                </div>
+              )}
+
+              {/* Bottom Card Title over image for instant visual punch */}
+              <div className="absolute bottom-2.5 left-3 right-3 transition-transform duration-300 group-hover:-translate-y-0.5">
+                <h3 className="font-black text-sm sm:text-base text-white font-display drop-shadow-sm truncate group-hover:text-blue-300 transition-colors duration-200">
+                  {cat.name}
+                </h3>
+              </div>
             </div>
 
-            {/* Unboxed Metadata with subtle separators */}
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
-              <span className="font-bold text-slate-900">From ₹{cat.minPrice}</span>
-              <span className="text-slate-400 font-medium">{cat.providerCount} nearby</span>
+            {/* Minimal Card Footer: Price tag & Action */}
+            <div className="p-3 sm:p-4 bg-white flex items-center justify-between border-t border-slate-100 transition-colors duration-200 group-hover:bg-slate-50/50">
+              <div>
+                <span className="text-[10px] text-slate-400 block font-medium">Starting</span>
+                <span className="font-black text-xs sm:text-sm text-slate-900 group-hover:text-blue-600 transition-colors">From ₹{cat.minPrice}</span>
+              </div>
+
+              <div className="h-7 w-7 rounded-full bg-slate-100 group-hover:bg-blue-600 text-slate-700 group-hover:text-white flex items-center justify-center transition-all duration-300 shadow-xs group-hover:scale-110">
+                <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform duration-200" />
+              </div>
             </div>
           </div>
         ))}

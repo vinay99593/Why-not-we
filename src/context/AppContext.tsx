@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   UserRole,
+  AuthScreen,
   UserProfile,
   Address,
   ServiceCategory,
@@ -18,17 +19,25 @@ import {
   FuelVehicleType,
   ChatMessage,
   AppNotification,
+  Hotel,
+  HotelBooking,
+  Hostel,
+  HostelRequest,
 } from '../types';
 import {
   INITIAL_CATEGORIES,
   INITIAL_PROVIDERS,
   INITIAL_GROCERY_PRODUCTS,
-  INITIAL_USER,
+  INITIAL_CUSTOMERS,
   INITIAL_BOOKINGS,
   INITIAL_GROCERY_ORDERS,
   INITIAL_FUEL_ORDERS,
   INITIAL_NOTIFICATIONS,
   INITIAL_CHATS,
+  INITIAL_HOTELS,
+  INITIAL_HOSTELS,
+  INITIAL_HOTEL_BOOKINGS,
+  INITIAL_HOSTEL_REQUESTS,
   FUEL_RATES,
 } from '../data/mockData';
 
@@ -38,14 +47,20 @@ export type ActivePage =
   | 'grocery'
   | 'fuel'
   | 'emergency'
+  | 'hotels'
+  | 'hostels'
   | 'orders'
   | 'messages'
   | 'customer_dashboard'
+  | 'worker_dashboard'
   | 'provider_dashboard'
-  | 'admin_dashboard';
+  | 'admin_dashboard'
+  | 'trusted';
 
 interface AppContextType {
-  // Navigation
+  // Navigation & Auth Flow
+  authScreen: AuthScreen | null;
+  setAuthScreen: (screen: AuthScreen | null) => void;
   activePage: ActivePage;
   setActivePage: (page: ActivePage) => void;
   selectedCategoryId: string | null;
@@ -58,6 +73,12 @@ interface AppContextType {
   // Search & Global filters
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  recentSearches: string[];
+  addRecentSearch: (query: string) => void;
+  clearRecentSearches: () => void;
+  removeRecentSearch: (query: string) => void;
+  isVoiceSearchOpen: boolean;
+  setIsVoiceSearchOpen: (open: boolean) => void;
 
   // Role & User
   userRole: UserRole;
@@ -69,11 +90,18 @@ interface AppContextType {
   savedProviders: string[];
   toggleSaveProvider: (providerId: string) => void;
 
-  // Categories & Providers
+  // Auth Operations
+  loginAsCustomer: (email?: string, password?: string) => boolean;
+  loginAsWorker: (email?: string, password?: string) => boolean;
+  loginAsAdmin: (email?: string, password?: string) => boolean;
+  logout: () => void;
+
+  // Categories & Workers (Providers)
   categories: ServiceCategory[];
   providers: Provider[];
   approveProvider: (providerId: string) => void;
   rejectProvider: (providerId: string) => void;
+  suspendProvider: (providerId: string) => void;
   registerNewProvider: (providerData: Omit<Provider, 'id' | 'rating' | 'reviewCount' | 'completedJobs' | 'reviews'>) => void;
 
   // Service Bookings
@@ -92,6 +120,34 @@ interface AppContextType {
   payBooking: (bookingId: string, method: PaymentMethod) => void;
   rateBooking: (bookingId: string, rating: number, comment: string) => void;
   cancelBooking: (bookingId: string) => void;
+
+  // Hotels
+  hotels: Hotel[];
+  hotelBookings: HotelBooking[];
+  bookHotel: (
+    hotelId: string,
+    roomType: string,
+    checkIn: string,
+    checkOut: string,
+    guests: number,
+    paymentMethod: PaymentMethod
+  ) => HotelBooking;
+  addHotel: (hotel: Hotel) => void;
+  updateHotel: (hotel: Hotel) => void;
+  deleteHotel: (hotelId: string) => void;
+
+  // Hostels
+  hostels: Hostel[];
+  hostelRequests: HostelRequest[];
+  requestHostel: (
+    hostelId: string,
+    roomType: string,
+    moveInDate: string,
+    durationMonths: number
+  ) => HostelRequest;
+  addHostel: (hostel: Hostel) => void;
+  updateHostel: (hostel: Hostel) => void;
+  deleteHostel: (hostelId: string) => void;
 
   // Grocery
   groceryProducts: GroceryProduct[];
@@ -133,7 +189,7 @@ interface AppContextType {
   markAllNotificationsRead: () => void;
   addNotification: (notif: Omit<AppNotification, 'id' | 'timestamp' | 'isRead'>) => void;
 
-  // Modals / Drawers
+  // Modals & Drawers
   isLocationModalOpen: boolean;
   setIsLocationModalOpen: (open: boolean) => void;
   isCartDrawerOpen: boolean;
@@ -157,29 +213,95 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Navigation & View state
-  const [activePage, setActivePage] = useState<ActivePage>('home');
+  // Navigation & Auth Screen state
+  const [authScreen, setAuthScreen] = useState<AuthScreen | null>(() => {
+    const saved = localStorage.getItem('wnw_auth_screen');
+    if (saved === 'none') return null;
+    return (saved as AuthScreen) || 'welcome';
+  });
+
+  const [activePage, setActivePage] = useState<ActivePage>(() => {
+    const saved = localStorage.getItem('wnw_active_page');
+    return (saved as ActivePage) || 'home';
+  });
+
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedProviderId, setSelectedProviderId] = useState<string | null>(null);
   const [activeBookingId, setActiveBookingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isVoiceSearchOpen, setIsVoiceSearchOpen] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    const saved = localStorage.getItem('wnw_recent_searches');
+    return saved
+      ? JSON.parse(saved)
+      : ['Electrician', 'Plumber', 'AC Repair', 'Water Can 20L', 'Hotel Grand'];
+  });
+
+  const addRecentSearch = (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    setRecentSearches((prev) => {
+      const filtered = prev.filter((item) => item.toLowerCase() !== trimmed.toLowerCase());
+      const updated = [trimmed, ...filtered].slice(0, 8);
+      localStorage.setItem('wnw_recent_searches', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const removeRecentSearch = (query: string) => {
+    setRecentSearches((prev) => {
+      const updated = prev.filter((item) => item !== query);
+      localStorage.setItem('wnw_recent_searches', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const clearRecentSearches = () => {
+    setRecentSearches([]);
+    localStorage.removeItem('wnw_recent_searches');
+  };
 
   // Role & User
-  const [userRole, setUserRole] = useState<UserRole>('customer');
-  const [user, setUser] = useState<UserProfile>(INITIAL_USER);
-  const [currentAddress, setCurrentAddress] = useState<Address>(INITIAL_USER.addresses[0]);
-  const [savedProviders, setSavedProviders] = useState<string[]>(INITIAL_USER.savedProviderIds);
+  const [userRole, setUserRole] = useState<UserRole>(() => {
+    const saved = localStorage.getItem('wnw_user_role');
+    return (saved as UserRole) || 'customer';
+  });
+
+  const [user, setUser] = useState<UserProfile>(INITIAL_CUSTOMERS[0]);
+  const [currentAddress, setCurrentAddress] = useState<Address>(INITIAL_CUSTOMERS[0].addresses[0]);
+  const [savedProviders, setSavedProviders] = useState<string[]>(INITIAL_CUSTOMERS[0].savedProviderIds);
 
   // Data states
   const [categories] = useState<ServiceCategory[]>(INITIAL_CATEGORIES);
+
   const [providers, setProviders] = useState<Provider[]>(() => {
-    const saved = localStorage.getItem('wnw_providers');
+    const saved = localStorage.getItem('wnw_providers_v2');
     return saved ? JSON.parse(saved) : INITIAL_PROVIDERS;
   });
 
   const [bookings, setBookings] = useState<ServiceBooking[]>(() => {
-    const saved = localStorage.getItem('wnw_bookings');
+    const saved = localStorage.getItem('wnw_bookings_v2');
     return saved ? JSON.parse(saved) : INITIAL_BOOKINGS;
+  });
+
+  const [hotels, setHotels] = useState<Hotel[]>(() => {
+    const saved = localStorage.getItem('wnw_hotels');
+    return saved ? JSON.parse(saved) : INITIAL_HOTELS;
+  });
+
+  const [hotelBookings, setHotelBookings] = useState<HotelBooking[]>(() => {
+    const saved = localStorage.getItem('wnw_hotel_bookings');
+    return saved ? JSON.parse(saved) : INITIAL_HOTEL_BOOKINGS;
+  });
+
+  const [hostels, setHostels] = useState<Hostel[]>(() => {
+    const saved = localStorage.getItem('wnw_hostels');
+    return saved ? JSON.parse(saved) : INITIAL_HOSTELS;
+  });
+
+  const [hostelRequests, setHostelRequests] = useState<HostelRequest[]>(() => {
+    const saved = localStorage.getItem('wnw_hostel_requests');
+    return saved ? JSON.parse(saved) : INITIAL_HOSTEL_REQUESTS;
   });
 
   const [groceryProducts, setGroceryProducts] = useState<GroceryProduct[]>(INITIAL_GROCERY_PRODUCTS);
@@ -187,6 +309,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem('wnw_cart');
     return saved ? JSON.parse(saved) : [];
   });
+
   const [groceryOrders, setGroceryOrders] = useState<GroceryOrder[]>(() => {
     const saved = localStorage.getItem('wnw_grocery_orders');
     return saved ? JSON.parse(saved) : INITIAL_GROCERY_ORDERS;
@@ -203,7 +326,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [notifications, setNotifications] = useState<AppNotification[]>(() => {
-    const saved = localStorage.getItem('wnw_notifications');
+    const saved = localStorage.getItem('wnw_notifications_v2');
     return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
   });
 
@@ -221,12 +344,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Sync to local storage
   useEffect(() => {
-    localStorage.setItem('wnw_providers', JSON.stringify(providers));
+    if (authScreen) localStorage.setItem('wnw_auth_screen', authScreen);
+    else localStorage.removeItem('wnw_auth_screen');
+  }, [authScreen]);
+
+  useEffect(() => {
+    localStorage.setItem('wnw_active_page', activePage);
+  }, [activePage]);
+
+  useEffect(() => {
+    localStorage.setItem('wnw_user_role', userRole);
+  }, [userRole]);
+
+  useEffect(() => {
+    localStorage.setItem('wnw_providers_v2', JSON.stringify(providers));
   }, [providers]);
 
   useEffect(() => {
-    localStorage.setItem('wnw_bookings', JSON.stringify(bookings));
+    localStorage.setItem('wnw_bookings_v2', JSON.stringify(bookings));
   }, [bookings]);
+
+  useEffect(() => {
+    localStorage.setItem('wnw_hotels', JSON.stringify(hotels));
+  }, [hotels]);
+
+  useEffect(() => {
+    localStorage.setItem('wnw_hotel_bookings', JSON.stringify(hotelBookings));
+  }, [hotelBookings]);
+
+  useEffect(() => {
+    localStorage.setItem('wnw_hostels', JSON.stringify(hostels));
+  }, [hostels]);
+
+  useEffect(() => {
+    localStorage.setItem('wnw_hostel_requests', JSON.stringify(hostelRequests));
+  }, [hostelRequests]);
 
   useEffect(() => {
     localStorage.setItem('wnw_cart', JSON.stringify(cartItems));
@@ -245,8 +397,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [messages]);
 
   useEffect(() => {
-    localStorage.setItem('wnw_notifications', JSON.stringify(notifications));
+    localStorage.setItem('wnw_notifications_v2', JSON.stringify(notifications));
   }, [notifications]);
+
+  // Auth Operations
+  const loginAsCustomer = (email?: string, password?: string): boolean => {
+    setUserRole('customer');
+    setUser(INITIAL_CUSTOMERS[0]);
+    setCurrentAddress(INITIAL_CUSTOMERS[0].addresses[0]);
+    setAuthScreen(null);
+    setActivePage('customer_dashboard');
+    addNotification({
+      title: 'Welcome back, Rahul! 👋',
+      message: 'Logged into Customer Dashboard. Find verified workers, groceries & hotels.',
+      type: 'system',
+    });
+    return true;
+  };
+
+  const loginAsWorker = (email?: string, password?: string): boolean => {
+    setUserRole('provider');
+    setAuthScreen(null);
+    setActivePage('worker_dashboard');
+    addNotification({
+      title: 'Worker Portal Active 🔧',
+      message: 'Logged in as Ravi Kumar (Electrician). New customer requests will ring here.',
+      type: 'system',
+    });
+    return true;
+  };
+
+  const loginAsAdmin = (email?: string, password?: string): boolean => {
+    setUserRole('admin');
+    setAuthScreen(null);
+    setActivePage('admin_dashboard');
+    addNotification({
+      title: 'Admin Console Access 🛡️',
+      message: 'Authenticated as Platform Administrator. Full management controls unlocked.',
+      type: 'system',
+    });
+    return true;
+  };
+
+  const logout = () => {
+    setAuthScreen('welcome');
+  };
 
   // Saved providers toggle
   const toggleSaveProvider = (providerId: string) => {
@@ -262,18 +457,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUser((prev) => ({ ...prev, ...updates }));
   };
 
-  // Provider verification & management (Admin & Provider actions)
+  // Provider verification & management
   const approveProvider = (providerId: string) => {
     setProviders((prev) =>
       prev.map((p) =>
         p.id === providerId
-          ? { ...p, isVerified: true, verificationStatus: 'verified', badges: [...p.badges.filter((b) => b !== 'Pending KYC Verification'), 'Verified Pro'] }
+          ? {
+              ...p,
+              isVerified: true,
+              verificationStatus: 'verified',
+              isIdVerified: true,
+              isPhoneVerified: true,
+              isProfileVerified: true,
+              badges: [...p.badges.filter((b) => b !== 'Pending KYC Verification'), 'Verified Pro'],
+            }
           : p
       )
     );
     addNotification({
-      title: 'Provider Approved ✅',
-      message: `Provider ID ${providerId} has been successfully verified and is now live for bookings.`,
+      title: 'Worker Approved ✅',
+      message: `Worker ID ${providerId} has been verified and can now receive customer requests.`,
       type: 'system',
     });
   };
@@ -286,10 +489,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
+  const suspendProvider = (providerId: string) => {
+    setProviders((prev) =>
+      prev.map((p) =>
+        p.id === providerId ? { ...p, isVerified: false, isAvailable: false, verificationStatus: 'rejected' } : p
+      )
+    );
+    addNotification({
+      title: 'Worker Suspended ⚠️',
+      message: `Worker account ${providerId} suspended due to policy audit.`,
+      type: 'system',
+    });
+  };
+
   const registerNewProvider = (
     providerData: Omit<Provider, 'id' | 'rating' | 'reviewCount' | 'completedJobs' | 'reviews'>
   ) => {
-    const newId = `p-${Date.now()}`;
+    const newId = `w-${Date.now()}`;
     const newProv: Provider = {
       ...providerData,
       id: newId,
@@ -299,12 +515,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       reviews: [],
       isVerified: false,
       verificationStatus: 'pending',
-      badges: ['New Provider', 'Pending KYC Verification'],
+      badges: ['New Worker', 'Pending KYC Verification'],
+      isIdVerified: true,
+      isPhoneVerified: true,
+      isProfileVerified: false,
     };
     setProviders((prev) => [newProv, ...prev]);
     addNotification({
-      title: 'New Provider Application 📋',
-      message: `${providerData.name} has submitted KYC documents for ${providerData.categoryName}. Pending Admin approval.`,
+      title: 'New Worker Registration 📋',
+      message: `${providerData.name} applied for ${providerData.categoryName}. Pending Admin approval.`,
       type: 'system',
     });
   };
@@ -322,7 +541,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   ): ServiceBooking => {
     const prov = providers.find((p) => p.id === providerId);
     const amount = customAmount || (prov ? prov.visitFee + 150 : 399);
-    const newId = `BK-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newId = `SR-${Math.floor(100 + Math.random() * 900)}`;
 
     const newBooking: ServiceBooking = {
       id: newId,
@@ -348,7 +567,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         {
           status: 'requested',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          note: urgency === 'emergency' ? 'Urgent priority dispatch broadcasted' : 'Service request logged',
+          note: urgency === 'emergency' ? 'Urgent SOS priority dispatch sent' : 'Service request logged & sent to worker',
         },
       ],
     };
@@ -356,44 +575,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setBookings((prev) => [newBooking, ...prev]);
     setActiveBookingId(newId);
 
-    // Trigger instant notification
+    // Notification for Customer
     addNotification({
-      title: urgency === 'emergency' ? '🚨 Emergency Request Broadcasted' : 'Service Request Sent',
+      title: urgency === 'emergency' ? '🚨 SOS Request Sent' : 'Service Request Sent',
       message: `Your request for ${serviceTitle} was sent to ${newBooking.providerName}.`,
       type: urgency === 'emergency' ? 'emergency' : 'booking',
       linkTab: 'orders',
       referenceId: newId,
     });
 
-    // Auto-advance provider acceptance simulation after 3.5s for seamless testability
-    setTimeout(() => {
-      setBookings((current) =>
-        current.map((b) => {
-          if (b.id === newId && b.status === 'requested') {
-            return {
-              ...b,
-              status: 'accepted',
-              timeline: [
-                ...b.timeline,
-                {
-                  status: 'accepted',
-                  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                  note: `${b.providerName} accepted your request`,
-                },
-              ],
-            };
-          }
-          return b;
-        })
-      );
-      addNotification({
-        title: 'Booking Accepted! ✅',
-        message: `${newBooking.providerName} has accepted your request for ${serviceTitle}.`,
-        type: 'booking',
-        linkTab: 'orders',
-        referenceId: newId,
-      });
-    }, 3500);
+    // Notification for Worker
+    addNotification({
+      title: 'New Customer Request! 🔔',
+      message: `${user.name} sent a request: ${serviceTitle} (${currentAddress.area}).`,
+      type: 'booking',
+      linkTab: 'orders',
+      referenceId: newId,
+    });
 
     return newBooking;
   };
@@ -420,17 +618,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
 
     const statusLabels: Record<BookingStatus, string> = {
-      requested: 'Service Requested',
-      accepted: 'Booking Accepted',
-      on_the_way: 'Provider On The Way 🛵',
-      in_progress: 'Service In Progress 🔧',
-      completed: 'Service Completed 🎉',
-      cancelled: 'Booking Cancelled',
+      requested: 'Request Sent',
+      accepted: 'Worker Accepted Request ✅',
+      on_the_way: 'Worker On The Way 🛵',
+      arrived: 'Worker Arrived At Doorstep 📍',
+      in_progress: 'Work Started 🔧',
+      completed: 'Work Completed 🎉',
+      cancelled: 'Request Cancelled',
     };
 
     addNotification({
       title: `${statusLabels[newStatus]}`,
-      message: `Booking #${bookingId} status changed to ${newStatus.replace('_', ' ')}.`,
+      message: `Service #${bookingId}: ${note || statusLabels[newStatus]}`,
       type: 'booking',
       linkTab: 'orders',
       referenceId: bookingId,
@@ -442,7 +641,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map((b) => (b.id === bookingId ? { ...b, paymentStatus: 'paid', paymentMethod: method } : b))
     );
     addNotification({
-      title: 'Payment Successful 💳',
+      title: 'Payment Confirmed 💳',
       message: `Payment for booking #${bookingId} confirmed via ${method.toUpperCase()}. Digital receipt generated.`,
       type: 'booking',
       linkTab: 'orders',
@@ -460,7 +659,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       )
     );
 
-    // Also append review to provider
     setProviders((prev) =>
       prev.map((p) => {
         if (p.id === booking.providerId) {
@@ -497,7 +695,132 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     updateBookingStatus(bookingId, 'cancelled', 'Cancelled by customer');
   };
 
-  // Cart & Grocery Actions
+  // HOTEL ACTIONS
+  const bookHotel = (
+    hotelId: string,
+    roomType: string,
+    checkIn: string,
+    checkOut: string,
+    guests: number,
+    paymentMethod: PaymentMethod
+  ): HotelBooking => {
+    const hotel = hotels.find((h) => h.id === hotelId);
+    const room = hotel?.rooms.find((r) => r.type === roomType) || hotel?.rooms[0];
+    const nightlyPrice = room ? room.pricePerNight : 2499;
+
+    const d1 = new Date(checkIn);
+    const d2 = new Date(checkOut);
+    const nights = Math.max(1, Math.round((d2.getTime() - d1.getTime()) / (1000 * 3600 * 24)));
+    const total = nightlyPrice * nights;
+    const newBookingId = `HB-${Math.floor(100 + Math.random() * 900)}`;
+
+    const newBooking: HotelBooking = {
+      id: newBookingId,
+      customerId: user.id,
+      customerName: user.name,
+      customerPhone: user.phone,
+      hotelId: hotel?.id || hotelId,
+      hotelName: hotel?.name || 'Grand Boutique Hotel',
+      hotelImage: hotel?.images[0] || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=400&q=80',
+      roomType,
+      checkIn,
+      checkOut,
+      guests,
+      totalNights: nights,
+      totalAmount: total,
+      status: 'confirmed',
+      paymentStatus: 'paid',
+      createdAt: new Date().toISOString(),
+    };
+
+    setHotelBookings((prev) => [newBooking, ...prev]);
+
+    addNotification({
+      title: 'Hotel Booking Confirmed! 🏨',
+      message: `Your reservation at ${newBooking.hotelName} (${roomType}) is confirmed for ${checkIn}.`,
+      type: 'hotel',
+      linkTab: 'hotels',
+      referenceId: newBookingId,
+    });
+
+    return newBooking;
+  };
+
+  const addHotel = (newHotel: Hotel) => {
+    setHotels((prev) => [newHotel, ...prev]);
+    addNotification({
+      title: 'Hotel Added 🏨',
+      message: `${newHotel.name} added to live listings.`,
+      type: 'system',
+    });
+  };
+
+  const updateHotel = (updatedHotel: Hotel) => {
+    setHotels((prev) => prev.map((h) => (h.id === updatedHotel.id ? updatedHotel : h)));
+  };
+
+  const deleteHotel = (hotelId: string) => {
+    setHotels((prev) => prev.filter((h) => h.id !== hotelId));
+  };
+
+  // HOSTEL ACTIONS
+  const requestHostel = (
+    hostelId: string,
+    roomType: string,
+    moveInDate: string,
+    durationMonths: number
+  ): HostelRequest => {
+    const hostel = hostels.find((h) => h.id === hostelId);
+    const roomOpt = hostel?.roomOptions.find((r) => r.name === roomType) || hostel?.roomOptions[0];
+    const rent = roomOpt ? roomOpt.monthlyRent : 7500;
+    const newRequestId = `HR-${Math.floor(100 + Math.random() * 900)}`;
+
+    const newReq: HostelRequest = {
+      id: newRequestId,
+      customerId: user.id,
+      customerName: user.name,
+      customerPhone: user.phone,
+      hostelId: hostel?.id || hostelId,
+      hostelName: hostel?.name || 'Verified Hostel',
+      roomType,
+      monthlyRent: rent,
+      moveInDate,
+      durationMonths,
+      status: 'approved',
+      createdAt: new Date().toISOString(),
+    };
+
+    setHostelRequests((prev) => [newReq, ...prev]);
+
+    addNotification({
+      title: 'Hostel Request Approved! 🏠',
+      message: `Your bed at ${newReq.hostelName} is confirmed for ${moveInDate}. Contact: ${hostel?.contactPhone}`,
+      type: 'hostel',
+      linkTab: 'hostels',
+      referenceId: newRequestId,
+    });
+
+    return newReq;
+  };
+
+  const addHostel = (newHostel: Hostel) => {
+    setHostels((prev) => [newHostel, ...prev]);
+    addNotification({
+      title: 'Hostel Added 🏠',
+      message: `${newHostel.name} added to live listings.`,
+      type: 'system',
+    });
+  };
+
+  const updateHostel = (updatedHostel: Hostel) => {
+    setHostels((prev) => prev.map((h) => (h.id === updatedHostel.id ? updatedHostel : h)));
+  };
+
+  const deleteHostel = (hostelId: string) => {
+    setHostels((prev) => prev.filter((h) => h.id !== hostelId));
+  };
+
+  // Grocery Actions
   const addToCart = (product: GroceryProduct) => {
     setCartItems((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
@@ -565,16 +888,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     addNotification({
       title: 'Grocery Order Confirmed 🛒',
-      message: `Order #${newOrderId} is being packed by our local partner store. ETA 15 mins!`,
+      message: `Order #${newOrderId} is being packed by our local partner hub. ETA 15 mins!`,
       type: 'order',
       linkTab: 'orders',
       referenceId: newOrderId,
     });
-
-    // Simulated quick delivery progress
-    setTimeout(() => {
-      updateGroceryOrderStatus(newOrderId, 'out_for_delivery');
-    }, 4000);
 
     return newOrder;
   };
@@ -583,20 +901,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setGroceryOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status } : o))
     );
-    const messages: Record<GroceryOrderStatus, string> = {
-      confirmed: 'Order confirmed and sent to store',
-      packing: 'Items packed in insulated eco-friendly bag',
-      out_for_delivery: 'Rider is en route to your doorstep 🛵',
-      delivered: 'Order delivered successfully. Enjoy!',
-      cancelled: 'Order was cancelled',
-    };
-    addNotification({
-      title: `Grocery Update: ${status.replace('_', ' ').toUpperCase()}`,
-      message: messages[status],
-      type: 'order',
-      linkTab: 'orders',
-      referenceId: orderId,
-    });
   };
 
   // Fuel Actions
@@ -637,7 +941,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     addNotification({
       title: 'Fuel Order Scheduled ⛽',
-      message: `${quantityLiters}L of ${fuelType.toUpperCase()} scheduled for ${vehicleNumber}. Safe PESO bowser assigned.`,
+      message: `${quantityLiters}L of ${fuelType.toUpperCase()} scheduled for ${vehicleNumber}. Safe bowser assigned.`,
       type: 'order',
       linkTab: 'orders',
       referenceId: newFuelOrderId,
@@ -650,11 +954,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setFuelOrders((prev) =>
       prev.map((f) => (f.id === orderId ? { ...f, status } : f))
     );
-    addNotification({
-      title: `Fuel Bowser: ${status.replace('_', ' ').toUpperCase()}`,
-      message: `Fuel order #${orderId} is now ${status.replace('_', ' ')}.`,
-      type: 'order',
-    });
   };
 
   // Messaging Actions
@@ -662,8 +961,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newMsg: ChatMessage = {
       id: `m-${Date.now()}`,
       bookingId,
-      senderId: userRole === 'customer' ? user.id : 'p-1',
-      senderName: userRole === 'customer' ? user.name : 'Rajesh Kumar',
+      senderId: userRole === 'customer' ? user.id : 'w-1',
+      senderName: userRole === 'customer' ? user.name : 'Ravi Kumar',
       senderRole: userRole,
       text,
       imageUrl,
@@ -672,7 +971,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setMessages((prev) => [...prev, newMsg]);
 
-    // If customer sent message, simulate friendly provider auto-reply after 1.8s
     if (userRole === 'customer') {
       setTimeout(() => {
         const autoReplies = [
@@ -685,8 +983,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const replyMsg: ChatMessage = {
           id: `m-reply-${Date.now()}`,
           bookingId,
-          senderId: activeChatPartner?.id || 'p-1',
-          senderName: activeChatPartner?.name || 'Rajesh Kumar',
+          senderId: activeChatPartner?.id || 'w-1',
+          senderName: activeChatPartner?.name || 'Ravi Kumar',
           senderRole: 'provider',
           text: randomReply,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -697,7 +995,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           message: randomReply,
           type: 'message',
         });
-      }, 1800);
+      }, 1600);
     }
   };
 
@@ -727,6 +1025,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider
       value={{
+        authScreen,
+        setAuthScreen,
         activePage,
         setActivePage,
         selectedCategoryId,
@@ -737,6 +1037,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setActiveBookingId,
         searchQuery,
         setSearchQuery,
+        recentSearches,
+        addRecentSearch,
+        clearRecentSearches,
+        removeRecentSearch,
+        isVoiceSearchOpen,
+        setIsVoiceSearchOpen,
         userRole,
         setUserRole,
         user,
@@ -745,10 +1051,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCurrentAddress,
         savedProviders,
         toggleSaveProvider,
+        loginAsCustomer,
+        loginAsWorker,
+        loginAsAdmin,
+        logout,
         categories,
         providers,
         approveProvider,
         rejectProvider,
+        suspendProvider,
         registerNewProvider,
         bookings,
         createBooking,
@@ -756,6 +1067,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         payBooking,
         rateBooking,
         cancelBooking,
+        hotels,
+        hotelBookings,
+        bookHotel,
+        addHotel,
+        updateHotel,
+        deleteHotel,
+        hostels,
+        hostelRequests,
+        requestHostel,
+        addHostel,
+        updateHostel,
+        deleteHostel,
         groceryProducts,
         cartItems,
         addToCart,

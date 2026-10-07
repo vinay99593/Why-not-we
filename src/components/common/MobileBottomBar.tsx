@@ -9,8 +9,8 @@ export const MobileBottomBar: React.FC = () => {
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1.5 flex items-center justify-around shadow-lg">
       <button
         onClick={() => setActivePage('home')}
-        className={`flex flex-col items-center justify-center p-1 min-w-[54px] ${
-          activePage === 'home' ? 'text-slate-950 font-bold' : 'text-slate-500'
+        className={`flex flex-col items-center justify-center p-1 min-w-[54px] transition-colors ${
+          activePage === 'home' ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800'
         }`}
       >
         <Home className="h-5 w-5" />
@@ -19,8 +19,8 @@ export const MobileBottomBar: React.FC = () => {
 
       <button
         onClick={() => setActivePage('services')}
-        className={`flex flex-col items-center justify-center p-1 min-w-[54px] ${
-          activePage === 'services' ? 'text-slate-950 font-bold' : 'text-slate-500'
+        className={`flex flex-col items-center justify-center p-1 min-w-[54px] transition-colors ${
+          activePage === 'services' ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800'
         }`}
       >
         <Wrench className="h-5 w-5" />
@@ -29,14 +29,14 @@ export const MobileBottomBar: React.FC = () => {
 
       <button
         onClick={() => setActivePage('grocery')}
-        className={`relative flex flex-col items-center justify-center p-1 min-w-[54px] ${
-          activePage === 'grocery' ? 'text-slate-950 font-bold' : 'text-slate-500'
+        className={`relative flex flex-col items-center justify-center p-1 min-w-[54px] transition-colors ${
+          activePage === 'grocery' ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800'
         }`}
       >
         <div className="relative">
           <ShoppingBag className="h-5 w-5" />
           {cartItemCount > 0 && (
-            <span className="absolute -top-1.5 -right-2 bg-amber-500 text-slate-950 font-black text-[9px] h-3.5 w-3.5 rounded-full flex items-center justify-center">
+            <span className="absolute -top-1.5 -right-2 bg-blue-600 text-white font-bold text-[9px] h-4 w-4 rounded-full flex items-center justify-center shadow-xs">
               {cartItemCount}
             </span>
           )}
@@ -46,8 +46,8 @@ export const MobileBottomBar: React.FC = () => {
 
       <button
         onClick={() => setActivePage('emergency')}
-        className={`flex flex-col items-center justify-center p-1 min-w-[54px] ${
-          activePage === 'emergency' ? 'text-rose-600 font-bold' : 'text-rose-500'
+        className={`flex flex-col items-center justify-center p-1 min-w-[54px] transition-colors ${
+          activePage === 'emergency' ? 'text-rose-600 font-bold' : 'text-rose-500 hover:text-rose-700'
         }`}
       >
         <div className="p-0.5 rounded-full bg-rose-50">
@@ -58,8 +58,8 @@ export const MobileBottomBar: React.FC = () => {
 
       <button
         onClick={() => setActivePage('orders')}
-        className={`flex flex-col items-center justify-center p-1 min-w-[54px] ${
-          activePage === 'orders' ? 'text-slate-950 font-bold' : 'text-slate-500'
+        className={`flex flex-col items-center justify-center p-1 min-w-[54px] transition-colors ${
+          activePage === 'orders' ? 'text-blue-600 font-bold' : 'text-slate-500 hover:text-slate-800'
         }`}
       >
         <Clock className="h-5 w-5" />
@@ -72,10 +72,10 @@ export const MobileBottomBar: React.FC = () => {
           else if (userRole === 'admin') setActivePage('admin_dashboard');
           else setActivePage('customer_dashboard');
         }}
-        className={`flex flex-col items-center justify-center p-1 min-w-[54px] ${
+        className={`flex flex-col items-center justify-center p-1 min-w-[54px] transition-colors ${
           activePage === 'customer_dashboard' || activePage === 'provider_dashboard' || activePage === 'admin_dashboard'
-            ? 'text-slate-950 font-bold'
-            : 'text-slate-500'
+            ? 'text-blue-600 font-bold'
+            : 'text-slate-500 hover:text-slate-800'
         }`}
       >
         {userRole === 'provider' ? <Store className="h-5 w-5" /> : <User className="h-5 w-5" />}

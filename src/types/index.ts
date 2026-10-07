@@ -1,5 +1,13 @@
 export type UserRole = 'customer' | 'provider' | 'admin';
 
+export type AuthScreen =
+  | 'welcome'
+  | 'customer_login'
+  | 'customer_register'
+  | 'worker_login'
+  | 'worker_register'
+  | 'admin_login';
+
 export interface Address {
   id: string;
   label: 'Home' | 'Work' | 'Other';
@@ -29,6 +37,7 @@ export interface ServiceCategory {
   emoji: string;
   description: string;
   minPrice: number;
+  image?: string;
   popular?: boolean;
   emergencyAvailable?: boolean;
   providerCount: number;
@@ -70,12 +79,17 @@ export interface Provider {
   idProofType?: string;
   idProofNumber?: string;
   appliedDate?: string;
+  // Demo verification flags
+  isIdVerified?: boolean;
+  isPhoneVerified?: boolean;
+  isProfileVerified?: boolean;
 }
 
 export type BookingStatus =
   | 'requested'
   | 'accepted'
   | 'on_the_way'
+  | 'arrived'
   | 'in_progress'
   | 'completed'
   | 'cancelled';
@@ -213,9 +227,104 @@ export interface AppNotification {
   id: string;
   title: string;
   message: string;
-  type: 'booking' | 'order' | 'system' | 'message' | 'emergency';
+  type: 'booking' | 'order' | 'system' | 'message' | 'emergency' | 'hotel' | 'hostel';
   timestamp: string;
   isRead: boolean;
   linkTab?: string;
   referenceId?: string;
+}
+
+// HOTEL MODELS
+export interface HotelRoom {
+  id: string;
+  name: string;
+  type: 'Standard Room' | 'Deluxe AC Room' | 'Executive Suite' | 'Family Suite';
+  pricePerNight: number;
+  capacity: number;
+  amenities: string[];
+  available: boolean;
+  image: string;
+}
+
+export interface Hotel {
+  id: string;
+  name: string;
+  location: string;
+  city: string;
+  address: string;
+  rating: number;
+  reviewCount: number;
+  startingPrice: number;
+  images: string[];
+  description: string;
+  amenities: string[];
+  availableRooms: number;
+  rooms: HotelRoom[];
+}
+
+export interface HotelBooking {
+  id: string;
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  hotelId: string;
+  hotelName: string;
+  hotelImage: string;
+  roomType: string;
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  totalNights: number;
+  totalAmount: number;
+  status: 'confirmed' | 'checked_in' | 'completed' | 'cancelled';
+  paymentStatus: PaymentStatus;
+  createdAt: string;
+}
+
+// HOSTEL MODELS
+export type HostelCategory = 'boys' | 'girls' | 'students' | 'working_professionals';
+
+export interface HostelRoomOption {
+  id: string;
+  type: 'single' | 'double' | 'triple' | 'four_sharing';
+  name: string;
+  monthlyRent: number;
+  availableBeds: number;
+  depositAmount: number;
+}
+
+export interface Hostel {
+  id: string;
+  name: string;
+  category: HostelCategory;
+  location: string;
+  city: string;
+  address: string;
+  rating: number;
+  reviewCount: number;
+  startingRent: number;
+  images: string[];
+  description: string;
+  foodAvailable: boolean;
+  wifi: boolean;
+  laundry: boolean;
+  security24x7: boolean;
+  parking: boolean;
+  roomOptions: HostelRoomOption[];
+  contactPhone: string;
+}
+
+export interface HostelRequest {
+  id: string;
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  hostelId: string;
+  hostelName: string;
+  roomType: string;
+  monthlyRent: number;
+  moveInDate: string;
+  durationMonths: number;
+  status: 'requested' | 'approved' | 'active' | 'cancelled';
+  createdAt: string;
 }
