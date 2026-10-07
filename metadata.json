@@ -1,0 +1,6 @@
+{
+  "name": "WHY NOT WE - One Platform. Every Need.",
+  "description": "All-in-one local services, emergency repairs, and essential delivery platform connecting customers with verified nearby providers and delivery partners.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
