@@ -29,6 +29,7 @@ import {
   Coffee,
   Fuel,
   Calendar,
+  Truck,
 } from 'lucide-react';
 import { ProviderCard } from './ProviderCard';
 import { ProviderDetailsModal } from './ProviderDetailsModal';
@@ -44,6 +45,8 @@ export const CustomerDashboard: React.FC = () => {
     bookings,
     groceryOrders,
     fuelOrders,
+    transportOrders,
+    setActiveTransportOrderId,
     providers,
     categories,
     hotels,
@@ -66,7 +69,7 @@ export const CustomerDashboard: React.FC = () => {
     logout,
   } = useApp();
 
-  const [mainSection, setMainSection] = useState<'explore' | 'bookings' | 'grocery' | 'fuel' | 'saved' | 'profile'>('explore');
+  const [mainSection, setMainSection] = useState<'explore' | 'bookings' | 'transport' | 'grocery' | 'fuel' | 'saved' | 'profile'>('explore');
   const [dashboardSearch, setDashboardSearch] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
 
@@ -120,7 +123,9 @@ export const CustomerDashboard: React.FC = () => {
   };
 
   const handleCategoryClick = (catId: string) => {
-    if (catId === 'hotels') {
+    if (catId === 'transport' || catId === 'delivery_transport') {
+      setActivePage('transport');
+    } else if (catId === 'hotels') {
       setActivePage('hotels');
     } else if (catId === 'hostels') {
       setActivePage('hostels');
@@ -195,6 +200,7 @@ export const CustomerDashboard: React.FC = () => {
         {[
           { id: 'explore', label: 'Explore & Services', icon: Sparkles },
           { id: 'bookings', label: `Service Bookings (${bookings.length})`, icon: Clock },
+          { id: 'transport', label: `Transport (${transportOrders.length})`, icon: Truck },
           { id: 'grocery', label: `Grocery Orders (${groceryOrders.length})`, icon: ShoppingBag },
           { id: 'fuel', label: `Fuel Orders (${fuelOrders.length})`, icon: Fuel },
           { id: 'saved', label: `Saved Pros (${favoriteProviders.length})`, icon: Bookmark },
@@ -858,6 +864,78 @@ export const CustomerDashboard: React.FC = () => {
                     title="Call Provider"
                   >
                     <Phone className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* 4B. TAB: TRANSPORT ORDERS */}
+      {mainSection === 'transport' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-900 font-display">
+              Delivery & Transport Trips ({transportOrders.length})
+            </h2>
+            <button
+              onClick={() => setActivePage('transport')}
+              className="text-xs font-bold text-blue-600 hover:underline"
+            >
+              + Book a Vehicle
+            </button>
+          </div>
+
+          {transportOrders.length === 0 ? (
+            <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 text-slate-400 text-xs">
+              No transport trips booked yet. Move parcels, furniture, or construction materials anytime!
+            </div>
+          ) : (
+            transportOrders.map((t) => (
+              <div
+                key={t.id}
+                className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs"
+              >
+                <div className="flex items-start gap-3.5">
+                  <img
+                    src={t.vehicleImage}
+                    alt={t.vehicleName}
+                    className="h-14 w-14 rounded-2xl object-cover shrink-0 border border-slate-200"
+                  />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-slate-900 font-display">
+                        {t.vehicleName} · {t.pickupAddress.area} → {t.dropAddress.area}
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-400">#{t.id}</span>
+                      <StatusBadge status={t.status} size="sm" showDot />
+                    </div>
+
+                    <p className="text-slate-600 mt-1">
+                      Load: <strong className="capitalize">{t.goodsCategory}</strong> ({t.weightRange}) · {t.goodsDescription}
+                    </p>
+
+                    <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-2 flex-wrap">
+                      <span>Driver: <strong className="text-slate-700">{t.assignedDriver?.name}</strong></span>
+                      <span>·</span>
+                      <span>Security OTP: <strong className="font-mono text-slate-900 font-bold">{t.otp}</strong></span>
+                      <span>·</span>
+                      <span className="font-bold text-slate-900 font-mono">₹{t.totalFare}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => {
+                      setActiveTransportOrderId(t.id);
+                      setActivePage('transport');
+                    }}
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/20"
+                  >
+                    <Truck className="h-4 w-4" />
+                    <span>Track / View</span>
                   </button>
                 </div>
               </div>

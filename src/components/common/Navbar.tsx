@@ -21,6 +21,7 @@ import {
   Building,
   Home,
   LogOut,
+  Truck,
 } from 'lucide-react';
 import { NotificationDropdown } from './NotificationDropdown';
 
@@ -372,6 +373,18 @@ export const Navbar: React.FC = () => {
               Services & Trades
             </button>
             <button
+              onClick={() => setActivePage('transport')}
+              className={`transition-colors py-1 flex items-center gap-1.5 ${
+                activePage === 'transport' ? 'text-blue-600 font-bold border-b-2 border-blue-600' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Truck className="h-3.5 w-3.5 text-blue-600" />
+              <span>Delivery & Transport</span>
+              <span className="text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded">
+                NEW
+              </span>
+            </button>
+            <button
               onClick={() => setActivePage('grocery')}
               className={`transition-colors py-1 flex items-center gap-1.5 ${
                 activePage === 'grocery' ? 'text-blue-600 font-bold border-b-2 border-blue-600' : 'text-slate-600 hover:text-slate-900'
@@ -508,6 +521,15 @@ export const Navbar: React.FC = () => {
               className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-left"
             >
               🔧 Services & Trades
+            </button>
+            <button
+              onClick={() => {
+                setActivePage('transport');
+                setIsMobileMenuOpen(false);
+              }}
+              className="p-2.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 text-left font-bold"
+            >
+              🚚 Delivery & Transport
             </button>
             <button
               onClick={() => {

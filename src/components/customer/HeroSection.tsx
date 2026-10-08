@@ -58,7 +58,9 @@ export const HeroSection: React.FC = () => {
   };
 
   const handleSelectCategory = (catId: string) => {
-    if (catId === 'grocery') {
+    if (catId === 'transport') {
+      setActivePage('transport');
+    } else if (catId === 'grocery') {
       setActivePage('grocery');
     } else if (catId === 'fuel') {
       setActivePage('fuel');
@@ -156,6 +158,15 @@ export const HeroSection: React.FC = () => {
       accent: 'border-blue-500/20 text-blue-600 bg-blue-50/70',
       badge: 'bg-blue-600 text-white',
       image: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      id: 'transport',
+      name: 'Transport',
+      icon: '🚚',
+      price: 'From ₹50',
+      accent: 'border-blue-500/20 text-blue-600 bg-blue-50/70',
+      badge: 'bg-blue-600 text-white',
+      image: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=600&q=80',
     },
     {
       id: 'fuel',

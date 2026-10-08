@@ -79,59 +79,95 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   };
 
   switch (normalized) {
-    // 1. Amber (Accent / Warning / Pending)
+    // 1. Amber (Accent / Warning / Pending / Searching)
     case 'requested':
     case 'pending':
     case 'waiting':
+    case 'finding_driver':
       colorTheme = {
         bg: 'bg-amber-50',
         text: 'text-amber-800',
         border: 'border-amber-200',
         dotBg: 'bg-amber-500',
         pingBg: 'bg-amber-400',
-        defaultLabel: normalized === 'requested' ? 'Request Sent' : 'Pending',
+        defaultLabel:
+          normalized === 'finding_driver'
+            ? 'Finding Driver'
+            : normalized === 'requested'
+            ? 'Request Sent'
+            : 'Pending',
         IconComponent: Clock,
       };
       break;
 
-    // 2. Primary Blue (Accepted / Dispatch / En Route)
+    // 2. Primary Blue (Accepted / Dispatch / Driver Assigned)
     case 'accepted':
     case 'assigned':
+    case 'driver_assigned':
       colorTheme = {
         bg: 'bg-blue-50',
         text: 'text-blue-700',
         border: 'border-blue-200',
         dotBg: 'bg-blue-600',
         pingBg: 'bg-blue-400',
-        defaultLabel: 'Accepted',
+        defaultLabel: normalized === 'driver_assigned' ? 'Driver Assigned' : 'Accepted',
         IconComponent: CheckCircle2,
       };
       break;
 
+    // 3. Secondary Teal (On the Way / In Transit / Arriving / Loading / Active)
     case 'on_the_way':
     case 'bowser_dispatched':
     case 'in_transit':
-      colorTheme = {
-        bg: 'bg-blue-50',
-        text: 'text-blue-700',
-        border: 'border-blue-200',
-        dotBg: 'bg-blue-600',
-        pingBg: 'bg-blue-400',
-        defaultLabel: normalized === 'bowser_dispatched' ? 'Bowser Dispatched' : 'On The Way',
-        IconComponent: Navigation,
-      };
-      break;
-
-    // 3. Secondary Teal (Arrived / In Progress / Working / Confirmed)
-    case 'arrived':
+    case 'arriving_pickup':
+    case 'trip_started':
       colorTheme = {
         bg: 'bg-teal-50',
         text: 'text-teal-800',
         border: 'border-teal-200',
         dotBg: 'bg-teal-500',
         pingBg: 'bg-teal-400',
-        defaultLabel: 'Arrived at Site',
+        defaultLabel:
+          normalized === 'bowser_dispatched'
+            ? 'Bowser Dispatched'
+            : normalized === 'arriving_pickup'
+            ? 'Driver Arriving'
+            : normalized === 'trip_started'
+            ? 'Trip Started'
+            : 'On the Way',
         IconComponent: Navigation,
+      };
+      break;
+
+    case 'arrived':
+    case 'arrived_pickup':
+    case 'arrived_destination':
+      colorTheme = {
+        bg: 'bg-teal-50',
+        text: 'text-teal-800',
+        border: 'border-teal-200',
+        dotBg: 'bg-teal-500',
+        pingBg: 'bg-teal-400',
+        defaultLabel:
+          normalized === 'arrived_pickup'
+            ? 'Arrived at Pickup'
+            : normalized === 'arrived_destination'
+            ? 'Arrived at Drop'
+            : 'Arrived at Site',
+        IconComponent: Navigation,
+      };
+      break;
+
+    case 'loading':
+    case 'unloading':
+      colorTheme = {
+        bg: 'bg-teal-50',
+        text: 'text-teal-800',
+        border: 'border-teal-200',
+        dotBg: 'bg-teal-500',
+        pingBg: 'bg-teal-400',
+        defaultLabel: normalized === 'loading' ? 'Loading Goods' : 'Unloading',
+        IconComponent: Package,
       };
       break;
 
@@ -260,12 +296,10 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     status === 'Active' ||
     status === 'On the Way';
 
-  const pulseClasses = isPulsingStatus
-    ? 'animate-status-pulse ring-1 ring-current/25 shadow-2xs'
-    : '';
+  const pulseClasses = isPulsingStatus ? 'animate-status-pulse' : '';
 
-  // Fade-in entrance transition for all badges upon component mount
-  const entranceClasses = 'fade-in animate-badge-fade-in transition-opacity duration-300';
+  // Use the 'animate-badge-fade-in' class for entry
+  const entranceClasses = 'animate-badge-fade-in fade-in transition-opacity duration-300';
 
   return (
     <span
@@ -290,3 +324,5 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     </span>
   );
 };
+
+export default StatusBadge;

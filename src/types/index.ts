@@ -10,7 +10,7 @@ export type AuthScreen =
 
 export interface Address {
   id: string;
-  label: 'Home' | 'Work' | 'Other';
+  label: 'Home' | 'Work' | 'Other' | 'Shop' | 'Warehouse';
   street: string;
   area: string;
   city: string;
@@ -227,7 +227,7 @@ export interface AppNotification {
   id: string;
   title: string;
   message: string;
-  type: 'booking' | 'order' | 'system' | 'message' | 'emergency' | 'hotel' | 'hostel';
+  type: 'booking' | 'order' | 'system' | 'message' | 'emergency' | 'hotel' | 'hostel' | 'transport';
   timestamp: string;
   isRead: boolean;
   linkTab?: string;
@@ -328,3 +328,119 @@ export interface HostelRequest {
   status: 'requested' | 'approved' | 'active' | 'cancelled';
   createdAt: string;
 }
+
+// ==========================================
+// DELIVERY & TRANSPORT MODELS
+// ==========================================
+export type TransportVehicleType =
+  | 'bike'
+  | 'auto'
+  | 'mini_truck'
+  | 'pickup'
+  | 'truck';
+
+export interface TransportVehicleConfig {
+  id: TransportVehicleType;
+  name: string;
+  tagline: string;
+  categoryLabel: string;
+  emoji: string;
+  image: string;
+  capacityWeight: string;
+  capacityVolume: string;
+  idealFor: string[];
+  baseFare: number;
+  perKmRate: number;
+  minFare: number;
+  estimatedSpeedKmh: number;
+}
+
+export type GoodCategory =
+  | 'parcel'
+  | 'furniture'
+  | 'grocery'
+  | 'electronics'
+  | 'construction'
+  | 'business'
+  | 'other';
+
+export type GoodsWeightRange = '<10kg' | '10-50kg' | '50-100kg' | '100+kg';
+
+export type HelperCount = 0 | 1 | 2;
+
+export type TransportOrderStatus =
+  | 'finding_driver'
+  | 'driver_assigned'
+  | 'arriving_pickup'
+  | 'arrived_pickup'
+  | 'loading'
+  | 'trip_started'
+  | 'on_the_way'
+  | 'arrived_destination'
+  | 'unloading'
+  | 'delivered'
+  | 'cancelled';
+
+export interface TransportDriver {
+  id: string;
+  name: string;
+  phone: string;
+  avatar: string;
+  rating: number;
+  tripsCount: number;
+  vehicleType: TransportVehicleType;
+  vehicleModel: string;
+  vehicleNumber: string;
+  isVerified: boolean;
+  distanceKm: number;
+  etaMins: number;
+  drivingLicenseVerified: boolean;
+  vehicleRcVerified: boolean;
+  isOnline: boolean;
+}
+
+export interface TransportOrder {
+  id: string;
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  vehicleType: TransportVehicleType;
+  vehicleName: string;
+  vehicleImage: string;
+  pickupAddress: Address;
+  dropAddress: Address;
+  additionalStops?: Address[]; // Multi-stop delivery ready
+  distanceKm: number;
+  goodsCategory: GoodCategory;
+  goodsDescription?: string;
+  weightRange: GoodsWeightRange;
+  isFragile: boolean;
+  helperCount: HelperCount;
+  isUrgent: boolean;
+  isBusiness: boolean;
+  scheduledTime: 'now' | string;
+  baseFare: number;
+  distanceFare: number;
+  helperFee: number;
+  urgentFee: number;
+  estimatedFareMin: number;
+  estimatedFareMax: number;
+  totalFare: number;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  status: TransportOrderStatus;
+  assignedDriver?: TransportDriver;
+  otp: string; // 4-digit security OTP for handover
+  deliveryProof?: {
+    photoUrl?: string;
+    signatureReceived?: boolean;
+    customerOtpVerified?: boolean;
+    completedAt?: string;
+  };
+  rating?: {
+    stars: number;
+    feedback?: string;
+  };
+  createdAt: string;
+}
+

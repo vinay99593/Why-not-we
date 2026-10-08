@@ -27,6 +27,7 @@ import { AdminLoginPage } from './components/auth/AdminLoginPage';
 // Pages
 import { HomePage } from './components/home/HomePage';
 import { ServicesPage } from './components/customer/ServicesPage';
+import { TransportSection } from './components/transport/TransportSection';
 import { GrocerySection } from './components/grocery/GrocerySection';
 import { FuelDeliverySection } from './components/fuel/FuelDeliverySection';
 import { EmergencyServicesSection } from './components/emergency/EmergencyServicesSection';
@@ -71,6 +72,7 @@ const MainLayout: React.FC = () => {
       <main className="flex-1">
         {activePage === 'home' && <HomePage />}
         {activePage === 'services' && <ServicesPage />}
+        {activePage === 'transport' && <TransportSection />}
         {activePage === 'grocery' && <GrocerySection />}
         {activePage === 'fuel' && <FuelDeliverySection />}
         {activePage === 'emergency' && <EmergencyServicesSection />}

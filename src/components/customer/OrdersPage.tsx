@@ -8,6 +8,8 @@ import {
   ChevronRight,
   Phone,
   MessageSquare,
+  Truck,
+  RotateCcw,
 } from 'lucide-react';
 import { BookingTrackerModal } from './BookingTrackerModal';
 import { StatusBadge } from '../common/StatusBadge';
@@ -17,6 +19,9 @@ export const OrdersPage: React.FC = () => {
     bookings,
     groceryOrders,
     fuelOrders,
+    transportOrders,
+    setActivePage,
+    setActiveTransportOrderId,
     activeBookingId,
     setActiveBookingId,
     setInvoiceBooking,
@@ -27,7 +32,7 @@ export const OrdersPage: React.FC = () => {
     providers,
   } = useApp();
 
-  const [filterType, setFilterType] = useState<'all' | 'services' | 'grocery' | 'fuel'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'services' | 'transport' | 'grocery' | 'fuel'>('all');
 
   const openTracker = (id: string) => {
     setActiveBookingId(id);
@@ -60,6 +65,7 @@ export const OrdersPage: React.FC = () => {
         {[
           { id: 'all', label: 'All Orders & Tasks' },
           { id: 'services', label: `Service Bookings (${bookings.length})` },
+          { id: 'transport', label: `Transport Orders (${transportOrders.length})` },
           { id: 'grocery', label: `Grocery Orders (${groceryOrders.length})` },
           { id: 'fuel', label: `Fuel Orders (${fuelOrders.length})` },
         ].map((tab) => (
@@ -143,6 +149,60 @@ export const OrdersPage: React.FC = () => {
                       <FileText className="h-4 w-4" />
                     </button>
                   )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {(filterType === 'all' || filterType === 'transport') && (
+          <div className="space-y-3">
+            {transportOrders.map((t) => (
+              <div
+                key={t.id}
+                className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:border-slate-800 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs"
+              >
+                <div className="flex items-start gap-3.5">
+                  <img
+                    src={t.vehicleImage}
+                    alt={t.vehicleName}
+                    className="h-14 w-14 rounded-2xl object-cover shrink-0 border border-slate-200"
+                  />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-slate-900 font-display">
+                        {t.vehicleName} · {t.pickupAddress.area} → {t.dropAddress.area}
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-400">#{t.id}</span>
+                      <StatusBadge status={t.status} size="sm" showDot />
+                    </div>
+
+                    <div className="text-[11px] text-slate-600 mt-1">
+                      <span>Load: <strong className="capitalize">{t.goodsCategory}</strong> ({t.weightRange}) · </span>
+                      <span>{t.goodsDescription}</span>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-2 flex-wrap">
+                      <span>Driver: <strong className="text-slate-700">{t.assignedDriver?.name || 'Assigned Driver'}</strong></span>
+                      <span>·</span>
+                      <span>Security OTP: <strong className="font-mono text-slate-900">{t.otp}</strong></span>
+                      <span>·</span>
+                      <span className="font-bold text-slate-900 font-mono">₹{t.totalFare}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => {
+                      setActiveTransportOrderId(t.id);
+                      setActivePage('transport');
+                    }}
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/20"
+                  >
+                    <Truck className="h-4 w-4" />
+                    <span>Track / View</span>
+                  </button>
                 </div>
               </div>
             ))}

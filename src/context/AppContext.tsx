@@ -23,6 +23,14 @@ import {
   HotelBooking,
   Hostel,
   HostelRequest,
+  TransportVehicleConfig,
+  TransportVehicleType,
+  TransportDriver,
+  TransportOrder,
+  TransportOrderStatus,
+  GoodCategory,
+  GoodsWeightRange,
+  HelperCount,
 } from '../types';
 import {
   INITIAL_CATEGORIES,
@@ -40,10 +48,17 @@ import {
   INITIAL_HOSTEL_REQUESTS,
   FUEL_RATES,
 } from '../data/mockData';
+import {
+  TRANSPORT_VEHICLES,
+  INITIAL_TRANSPORT_DRIVERS,
+  INITIAL_TRANSPORT_ORDERS,
+  INITIAL_SAVED_ADDRESSES,
+} from '../data/transportData';
 
 export type ActivePage =
   | 'home'
   | 'services'
+  | 'transport'
   | 'grocery'
   | 'fuel'
   | 'emergency'
@@ -175,6 +190,38 @@ interface AppContextType {
     paymentMethod: PaymentMethod
   ) => FuelOrder;
   updateFuelOrderStatus: (orderId: string, status: FuelOrderStatus) => void;
+
+  // Delivery & Transport
+  transportVehicles: TransportVehicleConfig[];
+  transportOrders: TransportOrder[];
+  transportDrivers: TransportDriver[];
+  savedTransportAddresses: Address[];
+  activeTransportOrderId: string | null;
+  setActiveTransportOrderId: (id: string | null) => void;
+  createTransportOrder: (orderData: {
+    vehicleType: TransportVehicleType;
+    pickupAddress: Address;
+    dropAddress: Address;
+    additionalStops?: Address[];
+    distanceKm: number;
+    goodsCategory: GoodCategory;
+    goodsDescription?: string;
+    weightRange: GoodsWeightRange;
+    isFragile: boolean;
+    helperCount: HelperCount;
+    isUrgent: boolean;
+    isBusiness: boolean;
+    scheduledTime: 'now' | string;
+    paymentMethod: PaymentMethod;
+  }) => TransportOrder;
+  updateTransportOrderStatus: (orderId: string, status: TransportOrderStatus, note?: string) => void;
+  completeTransportDelivery: (
+    orderId: string,
+    proof: { photoUrl?: string; signatureReceived?: boolean; customerOtpVerified?: boolean }
+  ) => void;
+  rateTransportOrder: (orderId: string, rating: { stars: number; feedback?: string }) => void;
+  rebookTransportOrder: (orderId: string) => TransportOrder | null;
+  addSavedTransportAddress: (addr: Address) => void;
 
   // Chat
   messages: ChatMessage[];
@@ -322,6 +369,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_FUEL_ORDERS;
   });
 
+  // Transport & Delivery states
+  const [transportVehicles] = useState<TransportVehicleConfig[]>(TRANSPORT_VEHICLES);
+  const [transportDrivers, setTransportDrivers] = useState<TransportDriver[]>(INITIAL_TRANSPORT_DRIVERS);
+  const [transportOrders, setTransportOrders] = useState<TransportOrder[]>(() => {
+    const saved = localStorage.getItem('wnw_transport_orders');
+    return saved ? JSON.parse(saved) : INITIAL_TRANSPORT_ORDERS;
+  });
+  const [savedTransportAddresses, setSavedTransportAddresses] = useState<Address[]>(() => {
+    const saved = localStorage.getItem('wnw_saved_transport_addresses');
+    return saved ? JSON.parse(saved) : INITIAL_SAVED_ADDRESSES;
+  });
+  const [activeTransportOrderId, setActiveTransportOrderId] = useState<string | null>(null);
+
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const saved = localStorage.getItem('wnw_messages');
     return saved ? JSON.parse(saved) : INITIAL_CHATS;
@@ -394,6 +454,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('wnw_fuel_orders', JSON.stringify(fuelOrders));
   }, [fuelOrders]);
+
+  useEffect(() => {
+    localStorage.setItem('wnw_transport_orders', JSON.stringify(transportOrders));
+  }, [transportOrders]);
+
+  useEffect(() => {
+    localStorage.setItem('wnw_saved_transport_addresses', JSON.stringify(savedTransportAddresses));
+  }, [savedTransportAddresses]);
 
   useEffect(() => {
     localStorage.setItem('wnw_messages', JSON.stringify(messages));
@@ -959,6 +1027,212 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
+  // Delivery & Transport Actions
+  const createTransportOrder = (orderData: {
+    vehicleType: TransportVehicleType;
+    pickupAddress: Address;
+    dropAddress: Address;
+    additionalStops?: Address[];
+    distanceKm: number;
+    goodsCategory: GoodCategory;
+    goodsDescription?: string;
+    weightRange: GoodsWeightRange;
+    isFragile: boolean;
+    helperCount: HelperCount;
+    isUrgent: boolean;
+    isBusiness: boolean;
+    scheduledTime: 'now' | string;
+    paymentMethod: PaymentMethod;
+  }): TransportOrder => {
+    const vehicleConfig =
+      transportVehicles.find((v) => v.id === orderData.vehicleType) || transportVehicles[0];
+    const baseFare = vehicleConfig.baseFare;
+    const distanceFare = Math.round(orderData.distanceKm * vehicleConfig.perKmRate);
+    const helperFee = orderData.helperCount === 1 ? 150 : orderData.helperCount === 2 ? 300 : 0;
+    const urgentFee = orderData.isUrgent ? 60 : 0;
+    const totalCalculated = Math.max(
+      vehicleConfig.minFare,
+      baseFare + distanceFare + helperFee + urgentFee
+    );
+    const estimatedFareMin = Math.round(totalCalculated * 0.95);
+    const estimatedFareMax = Math.round(totalCalculated * 1.15);
+
+    const matchingDriver =
+      transportDrivers.find((d) => d.vehicleType === orderData.vehicleType && d.isOnline) ||
+      transportDrivers[0];
+
+    const newOrderId = `TRP-${Math.floor(100 + Math.random() * 900)}`;
+    const otp = `${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const newOrder: TransportOrder = {
+      id: newOrderId,
+      customerId: user.id,
+      customerName: user.name,
+      customerPhone: user.phone,
+      vehicleType: orderData.vehicleType,
+      vehicleName: vehicleConfig.name,
+      vehicleImage: vehicleConfig.image,
+      pickupAddress: orderData.pickupAddress,
+      dropAddress: orderData.dropAddress,
+      additionalStops: orderData.additionalStops,
+      distanceKm: orderData.distanceKm,
+      goodsCategory: orderData.goodsCategory,
+      goodsDescription: orderData.goodsDescription,
+      weightRange: orderData.weightRange,
+      isFragile: orderData.isFragile,
+      helperCount: orderData.helperCount,
+      isUrgent: orderData.isUrgent,
+      isBusiness: orderData.isBusiness,
+      scheduledTime: orderData.scheduledTime,
+      baseFare,
+      distanceFare,
+      helperFee,
+      urgentFee,
+      estimatedFareMin,
+      estimatedFareMax,
+      totalFare: totalCalculated,
+      paymentMethod: orderData.paymentMethod,
+      paymentStatus: 'paid',
+      status: 'finding_driver',
+      assignedDriver: matchingDriver,
+      otp,
+      createdAt: 'Just now',
+    };
+
+    setTransportOrders((prev) => [newOrder, ...prev]);
+    setActiveTransportOrderId(newOrderId);
+
+    // Auto-progress from finding_driver to driver_assigned
+    setTimeout(() => {
+      setTransportOrders((prev) =>
+        prev.map((o) => (o.id === newOrderId ? { ...o, status: 'driver_assigned' } : o))
+      );
+      addNotification({
+        title: '🚚 Driver Assigned',
+        message: `${matchingDriver.name} (${matchingDriver.vehicleModel} · ${matchingDriver.vehicleNumber}) assigned for booking #${newOrderId}. ETA: ${matchingDriver.etaMins} mins.`,
+        type: 'transport',
+        linkTab: 'transport',
+        referenceId: newOrderId,
+      });
+    }, 2500);
+
+    return newOrder;
+  };
+
+  const updateTransportOrderStatus = (
+    orderId: string,
+    status: TransportOrderStatus,
+    note?: string
+  ) => {
+    setTransportOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, status } : o))
+    );
+
+    const statusNotifs: Partial<Record<TransportOrderStatus, { title: string; message: string }>> = {
+      arriving_pickup: {
+        title: '📍 Driver Arriving',
+        message: 'Your transport driver is approaching the pickup location.',
+      },
+      arrived_pickup: {
+        title: '📍 Driver Arrived at Pickup',
+        message: 'Driver has reached the pickup gate. Please initiate loading.',
+      },
+      loading: {
+        title: '📦 Loading Goods in Progress',
+        message: 'Goods are currently being loaded onto the vehicle.',
+      },
+      trip_started: {
+        title: '🚚 Trip Started · On The Way',
+        message: 'Goods safely loaded and vehicle is in transit to destination.',
+      },
+      on_the_way: {
+        title: '🚚 On The Way',
+        message: 'Vehicle is en route to drop address.',
+      },
+      arrived_destination: {
+        title: '📍 Arrived at Destination',
+        message: 'Vehicle has arrived at the drop address. Please inspect goods.',
+      },
+      unloading: {
+        title: '📦 Unloading Goods',
+        message: 'Goods are being unloaded at the delivery site.',
+      },
+      delivered: {
+        title: '✓ Delivered Successfully',
+        message: 'Goods safely delivered and verified with OTP.',
+      },
+    };
+
+    if (statusNotifs[status]) {
+      addNotification({
+        title: statusNotifs[status]!.title,
+        message: statusNotifs[status]!.message,
+        type: 'transport',
+        linkTab: 'transport',
+        referenceId: orderId,
+      });
+    }
+  };
+
+  const completeTransportDelivery = (
+    orderId: string,
+    proof: { photoUrl?: string; signatureReceived?: boolean; customerOtpVerified?: boolean }
+  ) => {
+    setTransportOrders((prev) =>
+      prev.map((o) =>
+        o.id === orderId
+          ? {
+              ...o,
+              status: 'delivered',
+              deliveryProof: {
+                ...proof,
+                completedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              },
+            }
+          : o
+      )
+    );
+
+    addNotification({
+      title: '✓ Delivery Completed',
+      message: `Transport order #${orderId} delivered and verified. Digital proof recorded.`,
+      type: 'transport',
+      linkTab: 'transport',
+      referenceId: orderId,
+    });
+  };
+
+  const rateTransportOrder = (orderId: string, rating: { stars: number; feedback?: string }) => {
+    setTransportOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, rating } : o))
+    );
+  };
+
+  const rebookTransportOrder = (orderId: string): TransportOrder | null => {
+    const existing = transportOrders.find((o) => o.id === orderId);
+    if (!existing) return null;
+    return createTransportOrder({
+      vehicleType: existing.vehicleType,
+      pickupAddress: existing.pickupAddress,
+      dropAddress: existing.dropAddress,
+      additionalStops: existing.additionalStops,
+      distanceKm: existing.distanceKm,
+      goodsCategory: existing.goodsCategory,
+      goodsDescription: existing.goodsDescription,
+      weightRange: existing.weightRange,
+      isFragile: existing.isFragile,
+      helperCount: existing.helperCount,
+      isUrgent: existing.isUrgent,
+      isBusiness: existing.isBusiness,
+      scheduledTime: 'now',
+      paymentMethod: existing.paymentMethod,
+    });
+  };
+
+  const addSavedTransportAddress = (addr: Address) => {
+    setSavedTransportAddresses((prev) => [addr, ...prev]);
+  };
+
   // Messaging Actions
   const sendMessage = (bookingId: string | undefined, text: string, imageUrl?: string) => {
     const newMsg: ChatMessage = {
@@ -1097,6 +1371,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         fuelRates: FUEL_RATES,
         placeFuelOrder,
         updateFuelOrderStatus,
+        transportVehicles,
+        transportOrders,
+        transportDrivers,
+        savedTransportAddresses,
+        activeTransportOrderId,
+        setActiveTransportOrderId,
+        createTransportOrder,
+        updateTransportOrderStatus,
+        completeTransportDelivery,
+        rateTransportOrder,
+        rebookTransportOrder,
+        addSavedTransportAddress,
         messages,
         sendMessage,
         activeChatPartner,

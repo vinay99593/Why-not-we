@@ -28,6 +28,7 @@ import {
   LogOut,
   ChevronRight,
   Star,
+  Truck,
 } from 'lucide-react';
 import { Provider, Hotel, Hostel } from '../../types';
 import { StatusBadge } from '../common/StatusBadge';
@@ -48,6 +49,9 @@ export const AdminDashboard: React.FC = () => {
     addHostel,
     groceryOrders,
     groceryProducts,
+    transportOrders,
+    transportDrivers,
+    transportVehicles,
     logout,
   } = useApp();
 
@@ -56,6 +60,7 @@ export const AdminDashboard: React.FC = () => {
     | 'customers'
     | 'workers'
     | 'service_requests'
+    | 'transport'
     | 'hotels'
     | 'hostels'
     | 'grocery'
@@ -183,6 +188,7 @@ export const AdminDashboard: React.FC = () => {
           { id: 'dashboard', label: 'Dashboard & Charts' },
           { id: 'workers', label: `Workers Management (${providers.length})` },
           { id: 'service_requests', label: `Service Requests (${bookings.length})` },
+          { id: 'transport', label: `Transport & Fleet (${transportOrders.length})` },
           { id: 'hotels', label: `Hotels (${hotels.length})` },
           { id: 'hostels', label: `Hostels (${hostels.length})` },
           { id: 'grocery', label: 'Grocery Catalog' },
@@ -397,6 +403,126 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* TAB: Transport & Fleet Management */}
+      {activeMenu === 'transport' && (
+        <div className="space-y-6">
+          {/* Fleet Metrics Overview */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-4 rounded-2xl bg-white border border-slate-200">
+              <div className="text-[10px] uppercase font-bold text-slate-400">Total Trips</div>
+              <div className="text-xl font-black text-slate-900 font-mono mt-1">{transportOrders.length}</div>
+              <div className="text-[10px] text-blue-600 font-medium">All vehicle types</div>
+            </div>
+            <div className="p-4 rounded-2xl bg-white border border-slate-200">
+              <div className="text-[10px] uppercase font-bold text-slate-400">Active Drivers</div>
+              <div className="text-xl font-black text-slate-900 font-mono mt-1">{transportDrivers.length}</div>
+              <div className="text-[10px] text-emerald-600 font-medium">100% Verified RC/DL</div>
+            </div>
+            <div className="p-4 rounded-2xl bg-white border border-slate-200">
+              <div className="text-[10px] uppercase font-bold text-slate-400">Vehicle Classes</div>
+              <div className="text-xl font-black text-slate-900 font-mono mt-1">{transportVehicles.length}</div>
+              <div className="text-[10px] text-indigo-600 font-medium">Bike to Heavy Truck</div>
+            </div>
+            <div className="p-4 rounded-2xl bg-white border border-slate-200">
+              <div className="text-[10px] uppercase font-bold text-slate-400">Transport GMV</div>
+              <div className="text-xl font-black text-emerald-600 font-mono mt-1">
+                ₹{transportOrders.reduce((acc, o) => acc + o.totalFare, 0)}
+              </div>
+              <div className="text-[10px] text-slate-400">Platform freight value</div>
+            </div>
+          </div>
+
+          {/* Drivers Fleet Table */}
+          <div className="p-5 rounded-3xl bg-white border border-slate-200 space-y-4">
+            <h3 className="font-bold text-sm text-slate-900 font-display">
+              Commercial Driver Partners & Vehicle Verification
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-100 text-slate-400 uppercase text-[10px]">
+                    <th className="pb-3">Driver Partner</th>
+                    <th className="pb-3">Vehicle Model & Number</th>
+                    <th className="pb-3">Type</th>
+                    <th className="pb-3">Rating</th>
+                    <th className="pb-3">Documents</th>
+                    <th className="pb-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {transportDrivers.map((d) => (
+                    <tr key={d.id} className="hover:bg-slate-50/70">
+                      <td className="py-3">
+                        <div className="flex items-center gap-2.5">
+                          <img src={d.avatar} alt={d.name} className="h-9 w-9 rounded-xl object-cover border" />
+                          <div>
+                            <div className="font-bold text-slate-900">{d.name}</div>
+                            <div className="text-[10px] text-slate-400">{d.phone}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 font-mono font-medium text-slate-700">
+                        <div>{d.vehicleModel}</div>
+                        <div className="text-[10px] text-slate-400">{d.vehicleNumber}</div>
+                      </td>
+                      <td className="py-3 capitalize font-semibold text-slate-600">
+                        {d.vehicleType.replace('_', ' ')}
+                      </td>
+                      <td className="py-3 font-bold text-amber-600">
+                        ★ {d.rating} ({d.tripsCount} trips)
+                      </td>
+                      <td className="py-3">
+                        <span className="inline-flex items-center gap-1 text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 text-[10px]">
+                          ✓ DL & RC Valid
+                        </span>
+                      </td>
+                      <td className="py-3">
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                          Online
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Transport Orders Live Audit Table */}
+          <div className="p-5 rounded-3xl bg-white border border-slate-200 space-y-4">
+            <h3 className="font-bold text-sm text-slate-900 font-display">
+              Live Freight & Transport Trips Monitor
+            </h3>
+            <div className="space-y-3">
+              {transportOrders.map((to) => (
+                <div
+                  key={to.id}
+                  className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-900">Trip #{to.id} · {to.vehicleName}</span>
+                      <StatusBadge status={to.status} size="sm" showDot />
+                    </div>
+                    <div className="text-slate-600 mt-1">
+                      Route: <strong>{to.pickupAddress.area}</strong> → <strong>{to.dropAddress.area}</strong> ({to.distanceKm} km)
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">
+                      Customer: {to.customerName} · Driver: {to.assignedDriver?.name} · Handover OTP: <strong className="font-mono text-slate-800">{to.otp}</strong>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="font-bold text-base text-slate-900 font-mono">₹{to.totalFare}</div>
+                    <div className="text-[10px] text-slate-500">Paid: {to.paymentMethod.toUpperCase()}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

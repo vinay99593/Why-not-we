@@ -15,6 +15,7 @@ import {
   Building,
   Home,
   Check,
+  Truck,
 } from 'lucide-react';
 import { AppNotification } from '../../types';
 
@@ -48,6 +49,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isOp
       if (notif.referenceId) {
         setActiveBookingId(notif.referenceId);
       }
+    } else if (notif.linkTab === 'transport' || notif.type === 'transport') {
+      setActivePage('transport');
     } else if (notif.linkTab === 'hotels') {
       setActivePage('hotels');
     } else if (notif.linkTab === 'hostels') {
@@ -71,6 +74,12 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isOp
       case 'booking':
         return {
           icon: CheckCircle2,
+          bg: 'bg-blue-100 text-blue-700',
+          dotBg: 'bg-blue-600',
+        };
+      case 'transport':
+        return {
+          icon: Truck,
           bg: 'bg-blue-100 text-blue-700',
           dotBg: 'bg-blue-600',
         };

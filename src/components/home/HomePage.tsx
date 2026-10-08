@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { Provider, GroceryProduct } from '../../types';
 import { HeroSection } from '../customer/HeroSection';
 import { ServiceCategoriesGrid } from '../customer/ServiceCategoriesGrid';
+import { HomeTransportShowcase } from './HomeTransportShowcase';
 import { ProviderCard } from '../customer/ProviderCard';
 import { ProviderDetailsModal } from '../customer/ProviderDetailsModal';
 import { ServiceBookingModal } from '../customer/ServiceBookingModal';
@@ -66,7 +67,12 @@ export const HomePage: React.FC = () => {
       {/* 1. Visually Attractive Hero Section with 13 Category Cards */}
       <HeroSection />
 
-      {/* 2. 🚨 EMERGENCY SERVICES - Noticeable High-Impact Section */}
+      {/* 2. SIGNATURE WHY NOT WE: DELIVERY & TRANSPORT (Move Anything. Anywhere Nearby.) */}
+      <div className="max-w-7xl mx-auto px-4">
+        <HomeTransportShowcase />
+      </div>
+
+      {/* 3. 🚨 EMERGENCY SERVICES - Noticeable High-Impact Section */}
       <section className="max-w-7xl mx-auto px-4">
         <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-md border-2 border-rose-100 relative overflow-hidden transition-all">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
