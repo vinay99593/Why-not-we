@@ -18,6 +18,7 @@ import {
   Send,
   Navigation,
 } from 'lucide-react';
+import { StatusBadge } from '../common/StatusBadge';
 
 interface BookingTrackerModalProps {
   bookingId: string | null;
@@ -160,10 +161,9 @@ export const BookingTrackerModal: React.FC<BookingTrackerModalProps> = ({
           {/* Active Status Banner */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="text-[10px] uppercase font-bold text-slate-400">Current Status</div>
-              <div className="text-base font-bold text-slate-900 capitalize flex items-center gap-2 mt-0.5">
-                <span>{booking.status.replace(/_/g, ' ')}</span>
-                {booking.status === 'completed' && <CheckCircle className="h-4 w-4 text-emerald-600" />}
+              <div className="text-[10px] uppercase font-bold text-slate-400 mb-1">Current Status</div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <StatusBadge status={booking.status} size="lg" showDot />
               </div>
               <p className="text-slate-500 text-[11px] mt-0.5">
                 {booking.timeline[booking.timeline.length - 1]?.note || 'Processing your request'}

@@ -170,7 +170,7 @@ export const GrocerySection: React.FC = () => {
                   </div>
                 </div>
 
-                <h3 className="font-bold text-slate-900 text-xs sm:text-sm font-display line-clamp-1 group-hover:text-amber-600 transition-colors">
+                <h3 className="font-bold text-slate-900 text-xs sm:text-sm font-display line-clamp-1 group-hover:text-blue-600 transition-colors">
                   {prod.name}
                 </h3>
                 <p className="text-[11px] text-slate-400 mt-0.5">{prod.unit}</p>

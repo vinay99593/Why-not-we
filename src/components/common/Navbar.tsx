@@ -43,9 +43,10 @@ export const Navbar: React.FC = () => {
     setIsProviderRegisterModalOpen,
     setAuthScreen,
     logout,
+    isNotificationModalOpen,
+    setIsNotificationModalOpen,
   } = useApp();
 
-  const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
 
@@ -285,18 +286,22 @@ export const Navbar: React.FC = () => {
           {/* Notifications Bell */}
           <div className="relative">
             <button
-              onClick={() => setIsNotifOpen(!isNotifOpen)}
-              className="p-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 transition-colors relative"
+              onClick={() => setIsNotificationModalOpen(!isNotificationModalOpen)}
+              className="p-2 sm:p-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300 transition-colors relative group"
               aria-label="Notifications"
+              title={`${unreadNotifCount} notifications`}
             >
-              <Bell className="h-4.5 w-4.5" />
+              <Bell className="h-4.5 w-4.5 transition-transform group-hover:rotate-12" />
               {unreadNotifCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
-                  {unreadNotifCount}
+                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-blue-600 text-white text-[10px] font-black flex items-center justify-center shadow-xs animate-pulse">
+                  {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
                 </span>
               )}
             </button>
-            <NotificationDropdown isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
+            <NotificationDropdown
+              isOpen={isNotificationModalOpen}
+              onClose={() => setIsNotificationModalOpen(false)}
+            />
           </div>
 
           {/* Grocery Cart Button */}

@@ -208,6 +208,8 @@ interface AppContextType {
   setLegalModalType: (type: 'terms' | 'privacy' | null) => void;
   isSupportModalOpen: boolean;
   setIsSupportModalOpen: (open: boolean) => void;
+  isNotificationModalOpen: boolean;
+  setIsNotificationModalOpen: (open: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -341,6 +343,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isProviderRegisterModalOpen, setIsProviderRegisterModalOpen] = useState(false);
   const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy' | null>(null);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
 
   // Sync to local storage
   useEffect(() => {
@@ -1121,6 +1124,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setLegalModalType,
         isSupportModalOpen,
         setIsSupportModalOpen,
+        isNotificationModalOpen,
+        setIsNotificationModalOpen,
       }}
     >
       {children}

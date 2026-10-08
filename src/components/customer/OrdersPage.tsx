@@ -10,6 +10,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { BookingTrackerModal } from './BookingTrackerModal';
+import { StatusBadge } from '../common/StatusBadge';
 
 export const OrdersPage: React.FC = () => {
   const {
@@ -94,15 +95,7 @@ export const OrdersPage: React.FC = () => {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-sm text-slate-900 font-display">{b.serviceTitle}</span>
                       <span className="font-mono text-[10px] text-slate-400">#{b.id}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded capitalize ${
-                        b.status === 'completed'
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : b.status === 'on_the_way'
-                          ? 'bg-amber-50 text-amber-700'
-                          : 'bg-slate-100 text-slate-800'
-                      }`}>
-                        {b.status.replace(/_/g, ' ')}
-                      </span>
+                      <StatusBadge status={b.status} size="sm" showDot />
                     </div>
 
                     <div className="text-slate-600 mt-1">
@@ -171,9 +164,7 @@ export const OrdersPage: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-sm text-slate-900 font-display">Grocery Order #{o.id}</span>
-                        <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded capitalize">
-                          {o.status.replace(/_/g, ' ')}
-                        </span>
+                        <StatusBadge status={o.status} size="sm" />
                       </div>
                       <div className="text-[11px] text-slate-500 mt-0.5">
                         {o.itemCount} items · Delivery PIN/OTP: <strong className="font-mono text-amber-600 text-xs">{o.otpCode}</strong>
@@ -215,9 +206,7 @@ export const OrdersPage: React.FC = () => {
                         {f.fuelType} Delivery ({f.quantityLiters} Liters)
                       </span>
                       <span className="text-[10px] font-mono text-slate-400">#{f.id}</span>
-                      <span className="text-[10px] font-bold bg-amber-50 text-amber-800 px-2 py-0.5 rounded capitalize">
-                        {f.status.replace(/_/g, ' ')}
-                      </span>
+                      <StatusBadge status={f.status} size="sm" />
                     </div>
                     <div className="text-[11px] text-slate-500 mt-0.5">
                       Vehicle: {f.vehicleNumber} · Scheduled: {f.timeSlot}

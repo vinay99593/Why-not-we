@@ -208,12 +208,30 @@ export const HeroSection: React.FC = () => {
             <span className="tracking-wide">One Platform. Every Need.</span>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight font-display text-slate-900">
-            WHY NOT WE
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tight font-display text-slate-900 leading-tight">
+            Everything You Need.<br className="hidden sm:inline" /> One Place.
           </h1>
-          <p className="text-sm sm:text-base font-semibold text-slate-600 max-w-xl mx-auto">
-            Find trusted services, everyday essentials, hotels and hostels — all in one place.
-          </p>
+
+          <div className="flex items-center justify-center gap-3 pt-1">
+            <button
+              type="button"
+              onClick={() => setActivePage('services')}
+              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-500/25 transition-all cursor-pointer"
+            >
+              Find a Service
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const catEl = document.getElementById('category-grid-anchor');
+                if (catEl) catEl.scrollIntoView({ behavior: 'smooth' });
+                else setActivePage('services');
+              }}
+              className="px-5 py-2.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs sm:text-sm transition-all cursor-pointer"
+            >
+              Explore
+            </button>
+          </div>
         </div>
 
         {/* Large, Visually Prominent Search Bar with Voice and Recent Searches */}
@@ -355,7 +373,7 @@ export const HeroSection: React.FC = () => {
         </div>
 
         {/* Large Visual Service Cards Grid (13 Visual Category Cards with Subtle Accents) */}
-        <div>
+        <div id="category-grid-anchor">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
             {visualCategories.map((item) => (
               <div

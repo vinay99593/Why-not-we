@@ -66,3 +66,49 @@
   animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+@keyframes badgeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(2px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(2px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-badge-fade-in {
+  animation: badgeFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes subtleStatusPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.90;
+    transform: scale(1.02);
+  }
+}
+
+.animate-status-pulse {
+  animation: subtleStatusPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+

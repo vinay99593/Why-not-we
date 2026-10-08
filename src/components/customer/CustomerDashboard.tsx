@@ -34,6 +34,8 @@ import { ProviderCard } from './ProviderCard';
 import { ProviderDetailsModal } from './ProviderDetailsModal';
 import { ServiceBookingModal } from './ServiceBookingModal';
 import { BookingTrackerModal } from './BookingTrackerModal';
+import { StatusBadge } from '../common/StatusBadge';
+import { NotificationBellButton } from '../common/NotificationBellButton';
 
 export const CustomerDashboard: React.FC = () => {
   const {
@@ -171,6 +173,7 @@ export const CustomerDashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 self-start md:self-auto relative z-10 flex-wrap">
+          <NotificationBellButton variant="dark" />
           <button
             onClick={() => setIsSupportModalOpen(true)}
             className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors border border-slate-700 cursor-pointer"
@@ -248,11 +251,120 @@ export const CustomerDashboard: React.FC = () => {
                     setActivePage('services');
                   }
                 }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 rounded-xl bg-slate-950 hover:bg-slate-900 text-amber-400 font-bold text-xs transition-colors cursor-pointer shadow-sm"
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors cursor-pointer shadow-sm shadow-blue-500/20"
               >
                 Search
               </button>
             </div>
+
+            {/* Active Request Section */}
+            {bookings.some((b) => !['completed', 'cancelled'].includes(b.status)) && (() => {
+              const activeBooking = bookings.find((b) => !['completed', 'cancelled'].includes(b.status))!;
+              const steps: { key: string; label: string }[] = [
+                { key: 'requested', label: 'Requested' },
+                { key: 'accepted', label: 'Accepted' },
+                { key: 'on_the_way', label: 'On The Way' },
+                { key: 'in_progress', label: 'In Progress' },
+                { key: 'completed', label: 'Completed' },
+              ];
+              const stepIndexMap: Record<string, number> = {
+                requested: 0,
+                accepted: 1,
+                on_the_way: 2,
+                in_progress: 3,
+                completed: 4,
+              };
+              const currentStepIdx = stepIndexMap[activeBooking.status] ?? 0;
+
+              return (
+                <div className="mt-5 p-5 sm:p-6 rounded-3xl bg-white border border-slate-200/90 shadow-sm space-y-4">
+                  {/* Active Request Header with StatusBadge */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-2.5 w-2.5 relative">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-600"></span>
+                      </span>
+                      <h3 className="font-bold text-sm sm:text-base text-slate-900 font-display">
+                        Active Request
+                      </h3>
+                      <span className="text-[10px] font-mono text-slate-400">#{activeBooking.id}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <StatusBadge status={activeBooking.status} size="md" showDot />
+                      <StatusBadge
+                        status={activeBooking.paymentStatus === 'paid' ? 'paid' : 'unpaid'}
+                        size="sm"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Active Request Details */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3.5">
+                      <img
+                        src={activeBooking.providerAvatar}
+                        alt={activeBooking.providerName}
+                        className="h-14 w-14 rounded-2xl object-cover shrink-0 border border-slate-200 shadow-2xs"
+                      />
+                      <div className="space-y-1">
+                        <h4 className="font-black text-base text-slate-900 font-display">
+                          {activeBooking.serviceTitle}
+                        </h4>
+                        <div className="text-slate-600 text-xs">
+                          Assigned Professional: <strong className="text-slate-900">{activeBooking.providerName}</strong> ({activeBooking.providerCategory})
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          Scheduled: {activeBooking.preferredDate} ({activeBooking.preferredTime}) · Total: <strong className="font-mono text-slate-900 font-bold">₹{activeBooking.amount}</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setActiveBookingId(activeBooking.id)}
+                        className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-md shadow-blue-500/25 cursor-pointer flex items-center gap-1.5"
+                      >
+                        <span>Track Live Progress</span>
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Step Progression Bar with Color Indicators */}
+                  <div className="pt-2">
+                    <div className="grid grid-cols-5 gap-1.5 text-center">
+                      {steps.map((st, i) => {
+                        const isDone = i <= currentStepIdx;
+                        const isCurrent = i === currentStepIdx;
+                        return (
+                          <div key={st.key} className="space-y-1">
+                            <div
+                              className={`h-1.5 rounded-full transition-all duration-300 ${
+                                isDone ? 'bg-blue-600' : 'bg-slate-200'
+                              } ${isCurrent ? 'ring-2 ring-blue-400/50' : ''}`}
+                            />
+                            <span
+                              className={`text-[10px] block truncate font-medium ${
+                                isCurrent
+                                  ? 'text-blue-600 font-bold'
+                                  : isDone
+                                  ? 'text-slate-700 font-semibold'
+                                  : 'text-slate-400'
+                              }`}
+                            >
+                              {st.label}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* B. All Service Categories Grid */}
@@ -707,11 +819,7 @@ export const CustomerDashboard: React.FC = () => {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-sm text-slate-900 font-display">{b.serviceTitle}</span>
                     <span className="text-[10px] font-mono text-slate-400">#{b.id}</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded capitalize ${
-                      b.status === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                    }`}>
-                      {b.status.replace(/_/g, ' ')}
-                    </span>
+                    <StatusBadge status={b.status} size="sm" showDot />
                   </div>
 
                   <p className="text-slate-600 mt-1">{b.description}</p>
@@ -721,7 +829,9 @@ export const CustomerDashboard: React.FC = () => {
                     <span>·</span>
                     <span>Preferred: {b.preferredDate} ({b.preferredTime})</span>
                     <span>·</span>
-                    <span className="font-bold text-slate-900">₹{b.amount}</span>
+                    <span className="font-bold text-slate-900 font-mono">₹{b.amount}</span>
+                    <span>·</span>
+                    <StatusBadge status={b.paymentStatus === 'paid' ? 'paid' : 'unpaid'} size="sm" />
                   </div>
                 </div>
 
@@ -784,9 +894,7 @@ export const CustomerDashboard: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-slate-900 font-display">Order #{o.id}</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded capitalize bg-emerald-100 text-emerald-800">
-                      {o.status.replace(/_/g, ' ')}
-                    </span>
+                    <StatusBadge status={o.status} size="sm" />
                   </div>
                   <p className="text-slate-500 mt-1">{o.items.length} items · Total ₹{o.totalAmount}</p>
                 </div>
@@ -836,9 +944,7 @@ export const CustomerDashboard: React.FC = () => {
                       {f.quantityLiters}L {f.fuelType.toUpperCase()}
                     </span>
                     <span className="text-[10px] font-mono text-slate-400">#{f.id}</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded capitalize bg-amber-100 text-amber-800">
-                      {f.status.replace(/_/g, ' ')}
-                    </span>
+                    <StatusBadge status={f.status} size="sm" />
                   </div>
                   <p className="text-slate-500 mt-1">
                     Vehicle: {f.vehicleNumber || 'DG Generator'} · Amount ₹{f.totalAmount}

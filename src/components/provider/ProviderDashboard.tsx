@@ -21,6 +21,8 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
+import { StatusBadge } from '../common/StatusBadge';
+import { NotificationBellButton } from '../common/NotificationBellButton';
 
 export const ProviderDashboard: React.FC = () => {
   const {
@@ -150,8 +152,10 @@ export const ProviderDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Availability Toggle & Logout */}
-        <div className="flex items-center gap-4">
+        {/* Availability Toggle, Notifications & Logout */}
+        <div className="flex items-center gap-3">
+          <NotificationBellButton variant="dark" />
+
           <div className="flex items-center gap-3 bg-slate-800/90 p-3 rounded-2xl border border-slate-700">
             <div className="text-right">
               <div className="text-[10px] uppercase font-bold text-slate-400">Availability</div>
@@ -273,9 +277,7 @@ export const ProviderDashboard: React.FC = () => {
                         Customer: {req.customerName}
                       </span>
                       <span className="font-mono text-[10px] text-slate-400">#{req.id}</span>
-                      <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
-                        NEW REQUEST
-                      </span>
+                      <StatusBadge status={req.status} size="sm" showDot />
                     </div>
                     <div className="text-slate-500 mt-0.5">
                       Service: <strong className="text-slate-800">{req.serviceTitle}</strong>
@@ -360,9 +362,7 @@ export const ProviderDashboard: React.FC = () => {
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-sm text-slate-900 font-display">{b.serviceTitle}</span>
-                      <span className="text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded capitalize">
-                        {b.status.replace(/_/g, ' ')}
-                      </span>
+                      <StatusBadge status={b.status} size="sm" showDot />
                     </div>
                     <div className="text-slate-500 mt-0.5">
                       Customer: <strong className="text-slate-900">{b.customerName}</strong> · Phone: {b.customerPhone}
@@ -423,8 +423,11 @@ export const ProviderDashboard: React.FC = () => {
               className="p-4 rounded-2xl bg-white border border-slate-200 flex items-center justify-between"
             >
               <div>
-                <div className="font-bold text-slate-900">{b.serviceTitle}</div>
-                <div className="text-slate-500 text-[11px]">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-slate-900">{b.serviceTitle}</span>
+                  <StatusBadge status="completed" size="sm" />
+                </div>
+                <div className="text-slate-500 text-[11px] mt-0.5">
                   Customer: {b.customerName} · Settled via {b.paymentMethod?.toUpperCase() || 'UPI'}
                 </div>
               </div>
@@ -543,11 +546,17 @@ export const ProviderDashboard: React.FC = () => {
               </button>
             </div>
 
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
-              <div>Customer: <strong>{selectedRequestDetails.customerName}</strong></div>
-              <div>Phone: <strong>{selectedRequestDetails.customerPhone}</strong></div>
-              <div>Service: <strong>{selectedRequestDetails.serviceTitle}</strong></div>
-              <div>Address: <strong>{selectedRequestDetails.address.street}, {selectedRequestDetails.address.area}</strong></div>
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-900">{selectedRequestDetails.serviceTitle}</span>
+                <StatusBadge status={selectedRequestDetails.status} size="sm" showDot />
+              </div>
+              <div className="space-y-1 text-slate-600 text-[11px]">
+                <div>Customer: <strong className="text-slate-900">{selectedRequestDetails.customerName}</strong></div>
+                <div>Phone: <strong className="text-slate-900">{selectedRequestDetails.customerPhone}</strong></div>
+                <div>Address: <strong>{selectedRequestDetails.address.street}, {selectedRequestDetails.address.area}</strong></div>
+                <div>Preferred Time: <strong>{selectedRequestDetails.preferredDate} ({selectedRequestDetails.preferredTime})</strong></div>
+              </div>
             </div>
 
             <p className="text-slate-600 leading-relaxed">

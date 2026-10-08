@@ -30,6 +30,8 @@ import {
   Star,
 } from 'lucide-react';
 import { Provider, Hotel, Hostel } from '../../types';
+import { StatusBadge } from '../common/StatusBadge';
+import { NotificationBellButton } from '../common/NotificationBellButton';
 
 export const AdminDashboard: React.FC = () => {
   const {
@@ -103,6 +105,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <NotificationBellButton variant="dark" />
           <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="font-mono text-emerald-400 text-[11px] font-bold">Node 24x7 Live</span>
@@ -331,27 +334,10 @@ export const AdminDashboard: React.FC = () => {
                     <td className="p-3.5 text-slate-500 truncate max-w-[160px]">{w.location}</td>
                     <td className="p-3.5 font-bold">{w.rating} ★</td>
                     <td className="p-3.5">
-                      {w.isAvailable ? (
-                        <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[10px] font-bold">
-                          Online
-                        </span>
-                      ) : (
-                        <span className="text-slate-500 bg-slate-100 px-2 py-0.5 rounded text-[10px]">
-                          Offline
-                        </span>
-                      )}
+                      <StatusBadge status={w.isAvailable ? 'active' : 'suspended'} label={w.isAvailable ? 'Online' : 'Offline'} size="sm" />
                     </td>
                     <td className="p-3.5">
-                      {w.isVerified ? (
-                        <span className="text-emerald-700 font-bold flex items-center gap-1">
-                          <CheckCircle className="h-3.5 w-3.5" />
-                          <span>Verified</span>
-                        </span>
-                      ) : (
-                        <span className="text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded text-[10px]">
-                          Pending KYC
-                        </span>
-                      )}
+                      <StatusBadge status={w.isVerified ? 'verified' : 'pending'} label={w.isVerified ? 'Verified' : 'Pending KYC'} size="sm" />
                     </td>
                     <td className="p-3.5 text-right space-x-1.5">
                       <button
@@ -397,9 +383,7 @@ export const AdminDashboard: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-slate-900">{b.serviceTitle}</span>
                   <span className="font-mono text-slate-400">#{b.id}</span>
-                  <span className="capitalize font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-[10px]">
-                    {b.status.replace(/_/g, ' ')}
-                  </span>
+                  <StatusBadge status={b.status} size="sm" showDot />
                 </div>
                 <div className="text-slate-500 mt-0.5">
                   Customer: <strong>{b.customerName}</strong> · Assigned: <strong>{b.providerName}</strong>
